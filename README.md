@@ -58,7 +58,7 @@ CLD_API_KEY=1234567890
 CLD_API_SECRET=your-cloud-secret
 ```
 
-Last stage is Make the first migration to create tables 
+Last stage is to make the first migration to create tables 
 
 ```
 alembic upgrade head
