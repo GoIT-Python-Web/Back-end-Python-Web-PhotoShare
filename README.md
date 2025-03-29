@@ -1,11 +1,12 @@
 In bash terminal
 
-1) git clone
-2) cd <project_name>
+1) git clone https://github.com/GoIT-Python-Web/Back-end-Python-Web-PhotoShare.git
+2) cd Back-end-Python-Web-PhotoShare
 3) poetry install
-4) 
+4) poetry shell
 
-Then you should create .env.development in serc/conf/ 
+
+5) you have to create .env.development in serc/conf/ 
 
 structure of .env.development
 
@@ -20,7 +21,7 @@ CLD_NAME=your-cloud-name
 CLD_API_KEY=1234567890
 CLD_API_SECRET=your-cloud-secret
 
-5) alembic upgrade head
+6) alembic upgrade head
 
 
 
