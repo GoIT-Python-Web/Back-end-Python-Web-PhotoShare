@@ -7,10 +7,11 @@ In bash terminal
 
 
 5) you have to create .env.development in serc/conf/ 
+6) alembic upgrade head
 
 structure of .env.development
 
-'
+
 ```env
 ENV_APP=development
 DB_URL=postgresql+asyncpg://<USERNAME>:<PASSWORD>@<HOST>:<PORT>/<DB_NAME>
@@ -23,10 +24,6 @@ SECRET_KEY=your-super-secret
 CLD_NAME=your-cloud-name
 CLD_API_KEY=1234567890
 CLD_API_SECRET=your-cloud-secret
-'
-
-
-6) alembic upgrade head
 
 
 
