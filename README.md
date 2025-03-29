@@ -1,7 +1,28 @@
+## DB install Guide 
+
+We are going to use PostgreSQL, so we need to create a Database first
+To create the DB you have to download and install PostgreSQL
+
+```
+https://www.postgresql.org/download/
+```
+Then open bash and connect to the DB server:
+
+```
+psql -U your_username
+```
+
+Run the command to create a DB
+
+```
+CREATE DATABASE <DB_NAME>
+```
+
+Now go ahed and connect evrything together 
 
 
 
-## Install guide
+## Project Install guide
 
 In bash terminal
 
