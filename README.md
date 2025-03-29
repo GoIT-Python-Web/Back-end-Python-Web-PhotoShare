@@ -1,18 +1,36 @@
+
+
+
+## Install guide
+
 In bash terminal
 
-1) git clone https://github.com/GoIT-Python-Web/Back-end-Python-Web-PhotoShare.git
-2) cd Back-end-Python-Web-PhotoShare
-3) poetry install
-4) poetry shell
+```
+git clone https://github.com/GoIT-Python-Web/Back-end-Python-Web-PhotoShare.git
+cd Back-end-Python-Web-PhotoShare
+poetry install
+poetry shell
+```
 
 
-5) you have to create .env.development in serc/conf/ 
-6) alembic upgrade head
+Then you have to create .env.development in src/conf/ 
 
-structure of .env.development
+```
+cd src/conf/
+touch .env.development
+```
+
+Last stage is Make the first migration to create tables 
+
+```
+alembic upgrade head
+```
+
+### **structure of .env.development**
 
 
-```env
+```
+env
 ENV_APP=development
 DB_URL=postgresql+asyncpg://<USERNAME>:<PASSWORD>@<HOST>:<PORT>/<DB_NAME>
 
@@ -24,6 +42,7 @@ SECRET_KEY=your-super-secret
 CLD_NAME=your-cloud-name
 CLD_API_KEY=1234567890
 CLD_API_SECRET=your-cloud-secret
+```
 
 
 
