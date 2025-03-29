@@ -20,17 +20,10 @@ cd src/conf/
 touch .env.development
 ```
 
-Last stage is Make the first migration to create tables 
-
-```
-alembic upgrade head
-```
-
 ### **structure of .env.development**
 
 
 ```
-env
 ENV_APP=development
 DB_URL=postgresql+asyncpg://<USERNAME>:<PASSWORD>@<HOST>:<PORT>/<DB_NAME>
 
@@ -44,5 +37,9 @@ CLD_API_KEY=1234567890
 CLD_API_SECRET=your-cloud-secret
 ```
 
+Last stage is Make the first migration to create tables 
 
+```
+alembic upgrade head
+```
 
