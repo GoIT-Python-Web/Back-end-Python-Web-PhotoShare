@@ -101,3 +101,18 @@ class RefreshToken(Base):
     is_valid: Mapped[bool] = mapped_column(Boolean, default=True)
 
     user: Mapped["User"] = relationship("User", back_populates="refresh_tokens")
+
+
+
+
+from sqlalchemy import Column, Integer, String, Boolean
+from src.core.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    role = Column(String, default="user")  # "admin" або "user"
