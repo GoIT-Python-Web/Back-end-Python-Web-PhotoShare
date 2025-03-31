@@ -1,6 +1,6 @@
 from uuid import UUID
-from repositories.comment_repository import CommentRepository
-from schemas.comment import CommentCreateDTO
+from src.repositories.comment_repository import CommentRepository
+from src.schemas.comment import CommentCreateDTO
 
 class CommentService:
     def __init__(self, comment_repo: CommentRepository):
