@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 import uvicorn
 
-from src.routes import comment_route
+from src.routes import comment_route, rating_route
 
 app = FastAPI()
 
 app.include_router(comment_route.router)
+app.include_router(rating_route.router)
 
 @app.get("/")
 def read_root():
