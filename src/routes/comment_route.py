@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.db import get_db
-from schemas.comment import CommentCreateDTO, CommentOut
-from services.comment_service import CommentService
-from repositories.comment_repository import CommentRepository
+from src.database.db import get_db
+from src.schemas.comment import CommentCreateDTO, CommentOut
+from src.services.comment_service import CommentService
+from src.repositories.comment_repository import CommentRepository
 from uuid import UUID
 
 router = APIRouter(prefix="/posts", tags=["comments"])

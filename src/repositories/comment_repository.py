@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from entity.models import Comment
+from src.entity.models import Comment
 from uuid import UUID
 
 class CommentRepository:
