@@ -1,10 +1,11 @@
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.sql import func
 from fastapi import HTTPException
 from src.entity.models import Post, PostRating, User
 
-async def add_rating(post_id: int, rating: int, db: AsyncSession, current_user: User) -> PostRating:
+async def add_rating(post_id: UUID, rating: int, db: AsyncSession, current_user: User) -> PostRating:
     # Check if the post exists
     result = await db.execute(select(Post).filter(Post.id == post_id))
     post = result.scalars().first()
@@ -27,7 +28,7 @@ async def add_rating(post_id: int, rating: int, db: AsyncSession, current_user: 
     await db.commit()
     return new_rating
 
-async def get_rating_data(post_id: int, db: AsyncSession):
+async def get_rating_data(post_id: UUID, db: AsyncSession):
     # Check if the post exists
     result = await db.execute(select(Post).filter(Post.id == post_id))
     post = result.scalars().first()
@@ -39,5 +40,4 @@ async def get_rating_data(post_id: int, db: AsyncSession):
     rating_data = result.first()
     average_rating = round(rating_data[0], 1) if rating_data[0] else 0
     total_reviews = rating_data[1]
-    
     return {"rating":f"{average_rating} / 5 ({total_reviews} оцінок)"}
