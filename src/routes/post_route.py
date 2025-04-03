@@ -6,7 +6,7 @@ from src.database.db import get_db
 from src.repositories.post_repository import PostRepository
 from src.services.post_service import PostService
 from typing import List, Optional
-
+from src.core.dependencies import user_required, admin_required
 router = APIRouter(prefix='/posts', tags=['posts'])
 
 @router.get("/{post_id}", response_model=PostResponse)
@@ -16,8 +16,8 @@ async def get_post(post_id: UUID, db: AsyncSession = Depends(get_db)):
     return await service.get_post_by_id(post_id)
 
 @router.get("/", response_model=List[PostResponse])
-async def get_posts(db: AsyncSession = Depends(get_db)):
-    service = PostService(PostRepository(db))
+async def get_posts(user: dict = Depends(user_required),db: AsyncSession = Depends(get_db)):
+    service = PostService(PostRepository(user,db))
     
     return await service.get_all_posts()
 

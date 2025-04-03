@@ -8,8 +8,9 @@ import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 class PostRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, user, db: AsyncSession):
         self.db = db
+        self.user = user
 
     async def create(
             self, 
