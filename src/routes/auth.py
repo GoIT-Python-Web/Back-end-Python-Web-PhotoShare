@@ -66,48 +66,81 @@ from datetime import date
 
 router = APIRouter()
 
+
+
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
+from src.conf.config import settings
+from src.repositories.user_repository import get_user_by_email, get_user_by_id, create_user, get_user_by_username
+from uuid import UUID
+from src.database.db import get_db
+
+#перевірка токена
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        
+        user_id: UUID = UUID(payload.get("sub"))
+
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = await get_user_by_id(db, user_id)
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+
 @router.post("/register")
 async def register(
-    username: str,
-    email: EmailStr,
-    password: str,
+    user: UserCreate = Body(...),  
     
-    name: Optional[str] = None,
-    phone: Optional[str] = None,
-    birthdate: Optional[date] = None,
-    description: Optional[str] = None,
-    img_link: Optional[str] = None, db: AsyncSession = Depends(get_db)):
-    existing_user = await get_user_by_email(db, email)
+    db: AsyncSession = Depends(get_db)):
+
+
+    existing_user = await get_user_by_email(db, user.email)
 
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    is_admin = (await db.execute(select(User))).scalars().first()  # Перший юзер = admin
-    if is_admin:
-        type = UserTypeEnum.admin
+    user_exists = (await db.execute(select(User))).scalars().first()  # Перший юзер = admin
+    if not user_exists:
+        user_type = UserTypeEnum.admin
     else:
-        type = UserTypeEnum.user
+        user_type = UserTypeEnum.user
 
-    user = UserCreate(
-        username=username,
-        email=email,
-        password=password,  # Пароль замінимо після хешування
-        type=type,
-        name=name,
-        phone=phone,
-        birthdate=birthdate,
-        description=description,
-        img_link=img_link
-    )
-    return await create_user(db, user) 
+    return await create_user(db, user, user_type) 
+
+from sqlalchemy.exc import SQLAlchemyError
+
+
+
 
 @router.post("/login", response_model=TokenModel)
-async def login(email : str, password : str, db: AsyncSession = Depends(get_db)):
-    db_user = await get_user_by_email(db, email)
-    if not db_user or not verify_password(password, db_user.password):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
+async def login(username: str = Form(...), password: str = Form(...), db: AsyncSession = Depends(get_db)):
+    
+        db_user = await get_user_by_username(db, username)
+        if not db_user or not verify_password(password, db_user.password):
+            raise HTTPException(status_code=400, detail="Invalid credentials")
+    
+        access_token, expire = create_access_token({"sub": str(db_user.id)})
+        refresh_token = create_refresh_token({"sub": str(db_user.id)})
+        
+        
 
-    return {
-        "access_token": create_access_token({"sub": db_user.email }),
-        "refresh_token": create_refresh_token({"sub": db_user.email}),
-    }
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_at": expire.isoformat()
+        }

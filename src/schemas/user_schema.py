@@ -10,7 +10,7 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
-    type: str  # Наприклад: "admin" або "user"
+    
     name: Optional[str] = None
     phone: Optional[str] = None
     birthdate: Optional[date] = None
