@@ -5,6 +5,7 @@ from passlib.context import CryptContext
 from src.conf.config import settings
 from src.database.db import get_db
 from datetime import datetime, timedelta
+from src.services.utils import logger
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
@@ -31,7 +32,7 @@ def create_refresh_token(data: dict):
     to_encode = data.copy()
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
 
-from src.services.utils import logger
+
 def get_current_user(token: str = Depends(oauth2_scheme),db = Depends(get_db)):
     credentials_exception = HTTPException(status_code=401, detail="Invalid token")
     try:

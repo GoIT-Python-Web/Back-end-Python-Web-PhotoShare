@@ -52,7 +52,7 @@ async def get_current_admin(db: AsyncSession = Depends(get_db)) -> User:
     return admin
 
 
-
+#---------------------------JWT-------------------------------------------------
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.security import create_access_token, create_refresh_token, verify_password
@@ -63,17 +63,14 @@ from src.entity.models import User
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 from datetime import date
-
-router = APIRouter()
-
-
-
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from src.conf.config import settings
 from src.repositories.user_repository import get_user_by_email, get_user_by_id, create_user, get_user_by_username
 from uuid import UUID
 from src.database.db import get_db
+from sqlalchemy.exc import SQLAlchemyError
+router = APIRouter()
 
 #перевірка токена
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
@@ -100,8 +97,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
 
     return user
 
-
-
 @router.post("/register")
 async def register(
     user: UserCreate = Body(...),  
@@ -121,11 +116,6 @@ async def register(
         user_type = UserTypeEnum.user
 
     return await create_user(db, user, user_type) 
-
-from sqlalchemy.exc import SQLAlchemyError
-
-
-
 
 @router.post("/login", response_model=TokenModel)
 async def login(username: str = Form(...), password: str = Form(...), db: AsyncSession = Depends(get_db)):
