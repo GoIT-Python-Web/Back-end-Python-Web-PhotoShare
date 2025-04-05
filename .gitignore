@@ -11,5 +11,5 @@ __pycache__/
 poetry.lock
 .DS_Store
 Thumbs.db
-.pyproject*
-pyproject.toml
+.my_log.log
+.my_log
