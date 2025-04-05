@@ -20,8 +20,7 @@ class PostRepository:
         ) -> Post:
         current_user = User()
         post = Post(
-            #user_id=current_user.id, 
-            user_id='123e4567-e89b-12d3-a456-426614174000',
+            user_id=current_user.id, 
             title=title, 
             image_url=image_url,
             description=description, 

@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from src.entity.models import User
-#from src.core.security import get_current_user
-from src.routes.auth import get_current_user
+from src.core.security import get_current_user
+#from src.routes.auth import get_current_user
 
 def role_required(*allowed_roles: str):
     async def verify_role(current_user: User = Depends(get_current_user)):
