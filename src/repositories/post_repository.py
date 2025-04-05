@@ -18,9 +18,8 @@ class PostRepository:
             image_url: str, 
             description: Optional[str]
         ) -> Post:
-        current_user = User()
         post = Post(
-            user_id=current_user.id, 
+            user_id=self.user.id, 
             title=title, 
             image_url=image_url,
             description=description, 
