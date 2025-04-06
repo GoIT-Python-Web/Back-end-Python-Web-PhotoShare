@@ -7,8 +7,7 @@ env_name = os.getenv("ENV_APP", "development")
 base_dir = Path(__file__).resolve().parent
 env_file_path = base_dir / f".env.{env_name}"
 
-
-env_file = env_file_path if env_file_path.exists() else None
+env_file = str(env_file_path) if env_file_path.exists() else None
 
 class Settings(BaseSettings):
     ENV_APP: str = env_name
@@ -23,8 +22,8 @@ class Settings(BaseSettings):
     CLD_API_SECRET: str
 
     model_config = ConfigDict(
-        env_file=env_file,
-        env_file_encoding="utf-8",
+        env_file=env_file,                    
+        env_file_encoding="utf-8",            
         case_sensitive=True,
         extra="ignore"
     )
