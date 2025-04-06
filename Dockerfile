@@ -7,17 +7,20 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
+COPY pyproject.toml /app/
 
-COPY pyproject.toml poetry.lock* /app/
+
 RUN poetry config virtualenvs.create false \
     && poetry install --only main --no-interaction --no-ansi
 
 
 COPY . .
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["/entrypoint.sh"]
+
+CMD alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000
+
+
+
