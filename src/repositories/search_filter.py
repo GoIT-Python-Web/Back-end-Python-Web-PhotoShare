@@ -3,40 +3,53 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func, asc, desc
 from entity import Post, PostTag, PostRating
-from schemas import PostSearchRequest, PostResponse, TagResponse
+from schemas.search_filter import PostSearchRequest, PostResponse, TagResponse
 from typing import List
-
+from sqlalchemy import select, asc, desc, func, or_, and_, cast, Date
+from entity.models import Post, PostTag, PostRating, User
 from repositories.rating_repository import get_rating_data
 
-async def search_posts(query: PostSearchRequest, db: AsyncSession, sort_by: str, order: str) -> List[PostResponse]:
+async def search_posts(
+    filters: PostSearchRequest,
+    db: AsyncSession
+) -> List[PostResponse]:
     stmt = (
         select(Post)
         .outerjoin(PostTag)
         .outerjoin(PostRating)
-        .options(joinedload(Post.tags), joinedload(Post.ratings))
+        .options(joinedload(Post.tags), joinedload(Post.ratings), joinedload(Post.user))
     )
-    
-    # Apply keyword search if provided
-    if query.keyword:
-        stmt = stmt.filter(
-            (Post.title.ilike(f"%{query.keyword}%")) |
-            (Post.description.ilike(f"%{query.keyword}%")) |
-            (PostTag.tag_name.ilike(f"%{query.keyword}%"))
+
+    filter_clauses = []
+
+    if filters.keyword:
+        filter_clauses.append(
+            or_(
+                Post.title.ilike(f"%{filters.keyword}%"),
+                Post.description.ilike(f"%{filters.keyword}%"),
+                PostTag.tag_name.ilike(f"%{filters.keyword}%")
+            )
         )
-    
-    # Apply tag filtering if provided
-    if query.tags:
-        stmt = stmt.filter(PostTag.tag_name.ilike(f"%{query.tags}%"))
-    
-    # Apply sorting based on `sort_by` and `order`
-    if sort_by == "rating":
-        sort_column = func.avg(PostRating.stars)
-    elif sort_by == "date":
-        sort_column = Post.created_at
+
+    if filters.tags:
+        filter_clauses.append(PostTag.tag_name.ilike(f"%{filters.tags}%"))
+
+    if filters.from_date and filters.to_date:
+        filter_clauses.append(Post.created_at.between(filters.from_date, filters.to_date))
+    elif filters.from_date:
+        filter_clauses.append(cast(Post.created_at, Date) == filters.from_date.date())
+    elif filters.to_date:
+        filter_clauses.append(cast(Post.created_at, Date) == filters.to_date.date())
+
+    if filter_clauses:
+        stmt = stmt.where(and_(*filter_clauses))
+
+    if filters.sort_by == "rating":
+        sort_column = func.avg(PostRating.rating)
     else:
         sort_column = Post.created_at
 
-    if order == "asc":
+    if filters.order == "asc":
         stmt = stmt.order_by(asc(sort_column))
     else:
         stmt = stmt.order_by(desc(sort_column))
@@ -46,10 +59,12 @@ async def search_posts(query: PostSearchRequest, db: AsyncSession, sort_by: str,
 
     return [
         PostResponse(
-            id=str(post.id),
+            id=post.id,
             title=post.title,
             description=post.description,
             image_url=post.image_url,
+            user_name=post.user.name,
+            created_at=post.created_at,
             tags=[TagResponse(tag_name=tag.tag_name) for tag in post.tags],
             average_rating=await get_rating_data(post.id, db)
         )
