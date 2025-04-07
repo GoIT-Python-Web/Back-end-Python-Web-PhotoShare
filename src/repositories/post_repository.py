@@ -43,12 +43,14 @@ class PostRepository:
 
         return result.scalars().all()
     
-    async def update_post(self, post_id: UUID, description: Optional[str]) -> bool:
+    async def update_post(self, post_id: UUID, description: Optional[str]) -> Post:
         stmt = Update(Post).where(Post.id == post_id).values(description=description)
-        result = await self.db.execute(stmt)
+        await self.db.execute(stmt)
         await self.db.commit()
 
-        return result.rowcount > 0
+        post = await self.get_post(post_id)
+
+        return post
     
     async def delete_post(self, post_id: UUID) -> bool:
         stmt = Delete(Post).where(Post.id == post_id)
