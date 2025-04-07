@@ -13,3 +13,4 @@ poetry.lock
 Thumbs.db
 .my_log.log
 .my_log
+my_log.log
