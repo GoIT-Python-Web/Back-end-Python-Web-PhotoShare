@@ -21,7 +21,7 @@ class PostService:
     async def get_all_posts(self) -> List[PostResponse]:
         return await self.post_repo.get_posts()
     
-    async def update_post(self, post_id: UUID, description: Optional[str] = None) -> bool:
+    async def update_post(self, post_id: UUID, description: Optional[str] = None) -> PostResponse:
         return await self.post_repo.update_post(post_id, description)
     
     async def delete_post(self, post_id: UUID) -> bool:

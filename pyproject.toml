@@ -25,6 +25,7 @@ slowapi = "^0.1.9"
 asyncpg = "^0.30.0"
 greenlet = "^3.1.1"
 bcrypt = "^4.3.0"
+python-multipart = "^0.0.20"
 
 
 [build-system]
