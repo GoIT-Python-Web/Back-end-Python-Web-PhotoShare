@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.schemas.post import PostResponse, PostDeleteResponse, PostUpdateResponse
 from uuid import UUID
 from src.database.db import get_db
 from src.repositories.post_repository import PostRepository
+from src.services.cloudinary_qr_service import UploadFileService
 from src.services.post_service import PostService
 from typing import List, Optional
 
@@ -31,11 +32,16 @@ async def update_post(post_id: UUID, description: Optional[str] = None, db: Asyn
 @router.post("/", response_model=PostResponse)
 async def create_post(
     title: str, 
-    image_url: str,
+    image: UploadFile,
     description: Optional[str], 
     db: AsyncSession = Depends(get_db)
 ):
     service = PostService(PostRepository(db))
+
+    try:
+        image_url = await UploadFileService.upload_file(image)
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
     
     return await service.create_post(title, image_url, description)
 
