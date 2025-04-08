@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import date
 from typing import Optional
+from uuid import UUID
 
 
 class UserLogin(BaseModel):
@@ -19,7 +20,7 @@ class UserCreate(BaseModel):
     img_link: Optional[str] = None
 
 class UserResponse(BaseModel):
-    id: int
+    id: UUID
     username: str
     email: str
     type: str
@@ -28,7 +29,7 @@ class UserResponse(BaseModel):
     birthdate: Optional[date]
     description: Optional[str]
     img_link: Optional[str]
-    is_banned: bool
+    is_active: bool
 
     class Config:
         from_attributes = True

@@ -6,10 +6,14 @@ from uuid import UUID
 import logging # для дебагу лише
 
 from src.database.db import get_db
-from src.entity.models import User, Post, Comment
-from src.routes.auth import get_current_admin
-from src.schemas.fake_user_schema_by_pavlo import UserBase, UserTypeEnum
+from src.entity.models import User, UserTypeEnum, Post, Comment, PostRating
+
+from src.core.security import get_current_user
+from src.core.dependencies import role_required
+
+from src.schemas.user_schema_for_admin_page import UserResponseForAdminPage
 from src.schemas.comment import CommentOut
+from src.schemas.rating import RatingOut
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -19,20 +23,14 @@ logger = logging.getLogger(__name__) # для дебагу лише
 
 
 # ============ 1. Отримання всіх користувачів - GET /admin/users ============
-@router.get("/users", response_model=List[UserBase])
-async def get_all_users(db: AsyncSession = Depends(get_db), admin: User = Depends(get_current_admin)):
+@router.get("/users", response_model=List[UserResponseForAdminPage])
+async def get_all_users(db: AsyncSession = Depends(get_db), admin: User = role_required("user", "admin")):
     """
     Отримання списку всіх користувачів (лише для адміністратора).
-    Якщо користувач не є адміністратором, буде повернута помилка доступу.
     """
-    if admin.type != UserTypeEnum.admin:
-        raise HTTPException(status_code=403, detail="Access denied: Only admins can view all users")
-
     result = await db.execute(select(User))
     users = result.scalars().all()
-
-    return [UserBase.model_validate(user) for user in users]
-
+    return [UserResponseForAdminPage.model_validate(user) for user in users]
 
 
 # ============ 2. Блокування користувача - PUT /admin/users/{user_id}/ban ============
@@ -40,18 +38,15 @@ async def get_all_users(db: AsyncSession = Depends(get_db), admin: User = Depend
 async def ban_user(
     user_id: UUID, 
     db: AsyncSession = Depends(get_db), 
-    admin: User = Depends(get_current_admin)  # Авторизація
+    admin: User = role_required("user", "admin")  # Перевірка ролі
 ):
     """Блокування користувача (адміністратором)."""
-
     logger.info(f"Admin {admin.email} is trying to ban user {user_id}")
 
     user = await db.get(User, user_id)
     if not user:
         logger.error(f"User {user_id} not found")
         raise HTTPException(status_code=404, detail="User not found")
-
-    logger.info(f"Found user: {user.email} | Active: {user.is_active}")
 
     if user.type == UserTypeEnum.admin:
         logger.warning(f"Attempt to ban another admin: {user.email}")
@@ -63,17 +58,15 @@ async def ban_user(
 
     user.is_active = False
     await db.commit()
-    await db.refresh(user)  # Оновлюємо об'єкт у сесії
+    await db.refresh(user)
 
     logger.info(f"User {user.email} has been banned successfully")
-
     return {"message": f"User {user.email} has been banned successfully"}
-
 
 
 # ============ 3. Видалення коментарів (soft delete) - DELETE /admin/comments/{comment_id} ============
 @router.delete("/comments/{comment_id}", response_model=dict)
-async def delete_comment(comment_id: UUID, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_admin)):
+async def delete_comment(comment_id: UUID, db: AsyncSession = Depends(get_db), admin: User = role_required("user", "admin")):
     """
     Видалення коментаря адміністратором (soft delete).
     """
@@ -83,15 +76,41 @@ async def delete_comment(comment_id: UUID, db: AsyncSession = Depends(get_db), u
 
     comment.is_deleted = True
     await db.commit()
-    await db.refresh(user)
     return {"message": "Comment marked as deleted"}
 
 
 # ============ 4. Отримання коментарів до поста (без видалених) - GET /admin/posts/{post_id}/comments ============
 @router.get("/posts/{post_id}/comments", response_model=List[CommentOut])
-async def get_post_comments(post_id: UUID, db: AsyncSession = Depends(get_db)):
+async def get_post_comments(post_id: UUID, db: AsyncSession = Depends(get_db), admin: User = role_required("user", "admin")):
     """
     Отримання списку коментарів до поста (без врахування видалених).
     """
     result = await db.execute(select(Comment).where(Comment.post_id == post_id, Comment.is_deleted == False))
     return result.scalars().all()
+
+
+# ============ 5. Зміна ролі користувача на протилежну - PUT /toggle-role/{user_id} ============
+@router.put("/toggle-role/{user_id}")
+async def toggle_user_role(
+    user_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = role_required("user", "admin")
+):
+    """
+    Зміна ролі користувача на протилежну (user/admin)
+    """
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.type = UserTypeEnum.admin if user.type == UserTypeEnum.user else UserTypeEnum.user
+
+    await db.commit()
+    await db.refresh(user)
+
+    return {
+        "id": user.id,
+        "new_role": user.type,
+    }
