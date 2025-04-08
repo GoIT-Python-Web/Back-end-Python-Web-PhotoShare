@@ -3,18 +3,26 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from src.entity.models import Comment
 from uuid import UUID
+from sqlalchemy.orm import joinedload
 from datetime import datetime
 
 class CommentRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
-
+    
     async def create(self, user_id: UUID, post_id: UUID, message: str) -> Comment:
         comment = Comment(user_id=user_id, post_id=post_id, message=message)
         self.db.add(comment)
         await self.db.commit()
         await self.db.refresh(comment)
-        return comment
+
+
+        result = await self.db.execute(
+            select(Comment)
+            .options(joinedload(Comment.user)) 
+            .where(Comment.id == comment.id)
+        )
+        return result.scalar_one()
 
     async def update(self, comment_id: UUID, message: str) -> Comment | None:
         comment = await self.get_by_id(comment_id)
