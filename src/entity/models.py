@@ -105,4 +105,7 @@ class RefreshToken(Base):
 
     user: Mapped["User"] = relationship("User", back_populates="refresh_tokens")
 
+    @property
+    def is_revoked(self) -> bool:
+        return self.revoked_at is not None
 
