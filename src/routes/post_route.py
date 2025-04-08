@@ -17,10 +17,9 @@ router = APIRouter(prefix='/posts', tags=['posts'])
 @router.get("/{post_id}", response_model=PostResponse)
 async def get_post(
     post_id: UUID, 
-    db: AsyncSession = Depends(get_db),
-    current_user: User = role_required("user", "admin"), 
+    db: AsyncSession = Depends(get_db), 
 ):
-    service = PostService(PostRepository(current_user, db))
+    service = PostService(PostRepository(db))
     
     return await service.get_post_by_id(post_id)
 
@@ -29,7 +28,7 @@ async def get_posts(
     db: AsyncSession = Depends(get_db), 
     current_user: User = role_required("user", "admin")
 ):
-    service = PostService(PostRepository(current_user, db))
+    service = PostService(PostRepository(db, current_user))
     
     return await service.get_all_posts()
 
@@ -39,7 +38,7 @@ async def update_post(
     db: AsyncSession = Depends(get_db),
     current_user: User = role_required("user", "admin"),
 ):
-    service = PostService(PostRepository(current_user, db))
+    service = PostService(PostRepository(db, current_user))
     post = await service.get_post_by_id(post_id)
 
     if post is None:
@@ -60,7 +59,7 @@ async def create_post(
     post_data: PostModel, 
     db: AsyncSession = Depends((get_db)),
     current_user: User = role_required("user", "admin")): 
-    service = PostService(PostRepository(current_user, db))
+    service = PostService(PostRepository(db, current_user))
     return await service.create_post(post_data.title, post_data.image_url, post_data.description)
 
 @router.delete("/{post_id}", response_model=bool)
@@ -69,7 +68,7 @@ async def delete_post(
     db: AsyncSession = Depends(get_db),
     current_user: User = role_required("user", "admin"),
 ):
-    service = PostService(PostRepository(current_user, db))
+    service = PostService(PostRepository(db, current_user))
     post = await service.get_post_by_id(post_id)
 
     if post is None:
