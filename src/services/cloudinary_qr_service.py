@@ -1,5 +1,5 @@
 import base64
-import qrcode
+import qrcode 
 import cloudinary
 import cloudinary.uploader
 from io import BytesIO
