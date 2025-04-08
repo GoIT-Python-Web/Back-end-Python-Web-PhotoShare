@@ -2,12 +2,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func, asc, desc
-from entity import Post, PostTag, PostRating
-from schemas.search_filter import PostSearchRequest, PostResponse, TagResponse
+from src.entity.models import Post, PostTag, PostRating
+from src.schemas.search_filter import PostSearchRequest, PostResponse, TagResponse
 from typing import List
 from sqlalchemy import select, asc, desc, func, or_, and_, cast, Date
-from entity.models import Post, PostTag, PostRating, User
-from repositories.rating_repository import get_rating_data
+from src.repositories.rating_repository import get_rating_data
 
 async def search_posts(
     filters: PostSearchRequest,

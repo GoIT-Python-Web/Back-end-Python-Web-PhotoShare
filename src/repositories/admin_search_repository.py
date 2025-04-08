@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, asc, desc, cast, Date
-from entity.models import User
+from src.entity.models import User
 from typing import List
-from schemas.admin_search import UserSearchRequest
+from src.schemas.admin_search import UserSearchRequest
 
 async def search_users(
     db: AsyncSession,
