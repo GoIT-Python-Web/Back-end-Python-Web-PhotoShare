@@ -11,7 +11,7 @@ class UserRole(str, Enum):
 
 class UserOut(BaseModel):
     id: UUID
-    name: str
+    name: Optional[str] = None
     email: str
     type: UserRole
     img_link: str | None
