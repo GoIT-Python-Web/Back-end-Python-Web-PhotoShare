@@ -54,7 +54,7 @@ async def search_posts(
         stmt = stmt.order_by(desc(sort_column))
 
     result = await db.execute(stmt)
-    posts = result.scalars().all()
+    posts = result.unique().scalars().all()
 
     return [
         PostResponse(
