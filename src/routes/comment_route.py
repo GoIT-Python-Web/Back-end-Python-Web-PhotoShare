@@ -16,8 +16,8 @@ router = APIRouter(prefix="/posts", tags=["comments"])
 async def add_comment(
     post_id: UUID,
     data: CommentCreateDTO,
-    db: AsyncSession = Depends(get_db),
     current_user: User = role_required("user", "admin"),
+    db: AsyncSession = Depends(get_db)   
 ):
     service = CommentService(CommentRepository(db))
     return await service.add_comment(current_user.id, post_id, data)
@@ -39,25 +39,18 @@ async def get_comment(comment_id: UUID, db: AsyncSession = Depends(get_db)):
 async def update_comment(
     comment_id: UUID,
     data: CommentUpdateDTO,
-    db: AsyncSession = Depends(get_db),
     current_user: User = role_required("user", "admin"),
+    db: AsyncSession = Depends(get_db),
 ):
     service = CommentService(CommentRepository(db))
-    comment = await service.get_comment(comment_id)
-    if comment is None or comment.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Comment not found or not authorized")
-    return await service.update_comment(comment_id, data)
+    return await service.update_comment(comment_id, data, current_user)
 
 
 @router.delete("/comments/{comment_id}")
 async def delete_comment(
     comment_id: UUID,
-    db: AsyncSession = Depends(get_db),
     current_user: User = role_required("user", "admin"),
+    db: AsyncSession = Depends(get_db),
 ):
     service = CommentService(CommentRepository(db))
-    comment = await service.get_comment(comment_id)
-    if comment is None or comment.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Comment not found or not authorized")
-    success = await service.delete_comment(comment_id)
-    return {"success": success}
+    return {"success": await service.delete_comment(comment_id, current_user)}

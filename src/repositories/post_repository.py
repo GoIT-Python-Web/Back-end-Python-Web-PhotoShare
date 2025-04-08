@@ -58,3 +58,5 @@ class PostRepository:
         await self.db.commit()
 
         return result.rowcount > 0
+    
+    
