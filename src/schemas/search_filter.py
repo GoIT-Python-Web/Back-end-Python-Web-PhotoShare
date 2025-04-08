@@ -20,7 +20,7 @@ class PostResponse(BaseModel):
     title: str
     description: str
     image_url: str
-    user_name: str
+    user_name: Optional[str] = None
     created_at: datetime
     tags: List[TagResponse]
     average_rating: Dict

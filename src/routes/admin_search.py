@@ -11,7 +11,7 @@ router = APIRouter(prefix="/admin/users", tags=["Admin Search"])
 
 @router.get("/search", response_model=List[UserOut])
 async def search_users(
-    current_user: User = role_required("user", "admin"),
+    current_user: User = role_required("admin"),
     filters: UserSearchRequest = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
