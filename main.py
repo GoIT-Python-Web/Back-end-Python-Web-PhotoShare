@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes import admin_route, comment_route, rating_route, post_route, auth, search_filter, admin_search
+from src.routes import admin_route, comment_route, rating_route, post_route, auth, search_filter, admin_search, user
 
 app = FastAPI()
 
 app.include_router(search_filter.router)
 app.include_router(admin_search.router)
 app.include_router(admin_route.router)
+app.include_router(user.router)
 app.include_router(comment_route.router)
 app.include_router(rating_route.router)
 app.include_router(post_route.router)
