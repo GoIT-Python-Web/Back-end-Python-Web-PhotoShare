@@ -1,20 +1,28 @@
-from pydantic import BaseModel, UUID4
-from typing import List, Optional
-
+from pydantic import BaseModel
+from uuid import UUID
+from typing import List, Dict, Optional, Literal
+from datetime import datetime
 
 class PostSearchRequest(BaseModel):
-    keyword: str
+    keyword: Optional[str] = None
+    tags: Optional[str] = None
+    from_date: Optional[datetime] = None
+    to_date: Optional[datetime] = None
+    sort_by: Literal["date", "rating"] = "date"
+    order: Literal["asc", "desc"] = "desc"
 
 class TagResponse(BaseModel):
     tag_name: str
 
 class PostResponse(BaseModel):
-    id: UUID4
+    id: UUID
     title: str
     description: str
     image_url: str
-    tags: List[TagResponse] 
-    average_rating: dict
+    user_name: str
+    created_at: datetime
+    tags: List[TagResponse]
+    average_rating: Dict
 
     class Config:
         orm_mode = True

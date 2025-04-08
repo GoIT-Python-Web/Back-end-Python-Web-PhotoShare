@@ -12,5 +12,3 @@ def role_required(*allowed_roles: str):
             )
         return current_user  # можеш повертати current_user, якщо треба
     return Depends(verify_role)
-
-
