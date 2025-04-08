@@ -19,7 +19,8 @@ class PostService:
         image_url: str,
         description: Optional[str] = None
     ):
-        return await self.post_repo.create(title, image_url, description)
+        created_post = await self.post_repo.create(title, image_url, description)
+        return await self.post_repo.get_post(created_post.id)
 
     async def get_post_by_id(self, post_id: UUID) -> PostResponse:
         return await self.post_repo.get_post(post_id)
