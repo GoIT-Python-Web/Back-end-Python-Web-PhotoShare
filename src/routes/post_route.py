@@ -18,17 +18,17 @@ router = APIRouter(prefix='/posts', tags=['posts'])
 async def get_post(
     post_id: UUID, 
     db: AsyncSession = Depends(get_db), 
+    current_user: User = role_required("user", "admin")
 ):
-    service = PostService(PostRepository(db))
+    service = PostService(PostRepository(db, current_user))
     
     return await service.get_post_by_id(post_id)
 
 @router.get("/", response_model=List[PostResponse])
 async def get_posts(
     db: AsyncSession = Depends(get_db), 
-    current_user: User = role_required("user", "admin")
 ):
-    service = PostService(PostRepository(db, current_user))
+    service = PostService(PostRepository(db))
     
     return await service.get_all_posts()
 
