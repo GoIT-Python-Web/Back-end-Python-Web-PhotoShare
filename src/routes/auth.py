@@ -22,7 +22,7 @@ from src.database.db import get_db
 from src.entity.models import User, UserTypeEnum
 from datetime import datetime
 from src.entity.models import RefreshToken
-from src.services.auth_service import store_tokens
+from src.services.auth_service import generate_tokens
 
 
 
@@ -55,20 +55,14 @@ async def register(
 
 @router.post("/login", response_model=TokenModel)
 async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
-    
-        db_user = await get_user_by_username(db, user_data.username)
-        if not db_user or not verify_password(user_data.password, db_user.password):
-            raise HTTPException(status_code=400, detail="Invalid credentials")
-    
-        access_token, expire = create_access_token({"sub": str(db_user.id)})
-        refresh_token = create_refresh_token({"sub": str(db_user.id)})
-        await store_tokens({ "refresh_token": refresh_token}, db_user, db)
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "expires_at": expire.isoformat()
-        }
+    from src.repositories.user_repository import get_user_by_username
+
+    db_user = await get_user_by_username(db, user_data.username)
+    if not db_user or not verify_password(user_data.password, db_user.password):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    tokens = await generate_tokens(db_user, db)
+    return tokens
 
 @router.post("/logout")
 async def logout(refresh_token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
@@ -78,7 +72,7 @@ async def logout(refresh_token: str = Depends(oauth2_scheme), db: AsyncSession =
     if not token_obj:
         raise HTTPException(status_code=404, detail="Refresh token not found")
 
-    if token_obj.is_revoked:
+    if token_obj.revoked_at is not None:
         raise HTTPException(status_code=400, detail="Token already revoked")
 
     token_obj.revoked_at = datetime.utcnow()
@@ -87,25 +81,22 @@ async def logout(refresh_token: str = Depends(oauth2_scheme), db: AsyncSession =
     return {"message": "Token revoked successfully"}
 
 
-@router.post("/refresh")
+
+@router.post("/refresh", response_model=TokenModel)
 async def refresh_token(refresh_token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RefreshToken).where(RefreshToken.token == refresh_token))
     token_obj = result.scalars().first()
 
-    if not token_obj or token_obj.is_revoked:
+    if not token_obj or token_obj.revoked_at is not None:
         raise HTTPException(status_code=401, detail="Invalid or revoked refresh token")
 
-    # можеш ще перевірити, чи не протух:
     if token_obj.expires_at < datetime.utcnow():
         raise HTTPException(status_code=401, detail="Refresh token expired")
 
-    # Згенеруй нові токени
     access_token, expire = create_access_token({"sub": str(token_obj.user_id)})
-    new_refresh_token = create_refresh_token({"sub": str(token_obj.user_id)})
 
     return {
         "access_token": access_token,
-        "refresh_token": new_refresh_token,
+        "refresh_token": token_obj.token,
         "expires_at": expire.isoformat()
     }
-
