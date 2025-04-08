@@ -1,7 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import Delete, Update
-from src.entity.models import Post, User
+from src.entity.models import Post, PostRating, PostTag, User
+from src.schemas.post import PostResponse, TagsShortResponse
 from typing import Optional
 from uuid import UUID
 import datetime
@@ -32,16 +35,70 @@ class PostRepository:
         return post
 
     async def get_post(self, post_id: UUID) -> Post:
-        stmt = select(Post).where(Post.id == post_id)
+        stmt = (
+            select(Post)
+            .options(
+                joinedload(Post.user),
+                selectinload(Post.tags).selectinload(PostTag.tag),
+                selectinload(Post.ratings)
+            )
+            .where(Post.id == post_id)
+        )
+
         result = await self.db.execute(stmt)
 
-        return result.scalar_one_or_none()
+        post = result.scalar_one_or_none()
+
+        if not post:
+            return None
+        
+        post_response = PostResponse.from_orm(post)
+        post_response.avg_rating = (
+            round(sum(r.rating for r in post.ratings) / len(post.ratings), 2)
+            if post.ratings else None
+        )
+        post_response.rating_count = len(post.ratings)
+        post_response.tags = [
+            TagsShortResponse.from_orm(tag_rel.tag)
+            for tag_rel in post.tags
+            if tag_rel.tag is not None
+        ]
+
+        return post_response
     
     async def get_posts(self) -> list[Post]:
-        stmt = select(Post)
+        stmt = (select(
+            Post
+        ).options(
+            joinedload(Post.user),
+            selectinload(Post.tags).selectinload(PostTag.tag),
+            selectinload(Post.ratings)
+        )
+        )
+
         result = await self.db.execute(stmt)
 
-        return result.scalars().all()
+        posts = result.scalars().all()
+    
+        posts_response = []
+
+        for post in posts:
+            avg = round(sum(r.rating for r in post.ratings) / len(post.ratings), 2) if post.ratings else None
+            count = len(post.ratings)
+
+            post_response = PostResponse.from_orm(post)
+            post_response.avg_rating = avg
+            post_response.rating_count = count
+
+            post_response.tags = [
+            TagsShortResponse.from_orm(tag_rel.tag)
+                for tag_rel in post.tags
+                if tag_rel.tag is not None
+            ]
+
+            posts_response.append(post_response)
+
+        return posts_response
     
     async def update_post(self, post_id: UUID, description: Optional[str]) -> Post:
         stmt = Update(Post).where(Post.id == post_id).values(description=description)
