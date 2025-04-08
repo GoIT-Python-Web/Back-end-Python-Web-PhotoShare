@@ -14,6 +14,14 @@ from src.core.dependencies import role_required
 
 router = APIRouter(prefix='/posts', tags=['posts'])
 
+@router.get("/", response_model=List[PostResponse])
+async def get_posts(
+    db: AsyncSession = Depends(get_db), 
+):
+    service = PostService(PostRepository(db))
+    
+    return await service.get_all_posts()
+
 @router.get("/{post_id}", response_model=PostResponse)
 async def get_post(
     post_id: UUID, 
@@ -23,14 +31,6 @@ async def get_post(
     service = PostService(PostRepository(db, current_user))
     
     return await service.get_post_by_id(post_id)
-
-@router.get("/", response_model=List[PostResponse])
-async def get_posts(
-    db: AsyncSession = Depends(get_db), 
-):
-    service = PostService(PostRepository(db))
-    
-    return await service.get_all_posts()
 
 @router.put("/{post_id}", response_model=PostResponse)
 async def update_post(
