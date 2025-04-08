@@ -7,6 +7,7 @@ from uuid import UUID
 class PostModel(BaseModel):
     title: str
     description: Optional[str] = None
+    image_url: str
     location: Optional[str] = None
     created_at: datetime = None
     updated_at: datetime = None
