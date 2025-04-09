@@ -22,6 +22,7 @@ async def create_user(db: AsyncSession, user_data: UserCreate, user_type: str):
     new_user = User(
         username=user_data.username,
         email=user_data.email,
+        name = user_data.name,
         type=user_type,
         password=password,
         
@@ -29,5 +30,5 @@ async def create_user(db: AsyncSession, user_data: UserCreate, user_type: str):
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-    return "You're welcome" #new_user
+    return "You're welcome" #new_user 
 
