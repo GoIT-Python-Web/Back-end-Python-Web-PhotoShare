@@ -1,7 +1,9 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from typing import Optional, Union
 from uuid import UUID
 from enum import Enum
+from fastapi import Form, HTTPException
 
 class UserTypeEnum(str, Enum):
     user = "user"
@@ -22,4 +24,45 @@ class MyselfOut(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class UserProfileResponse(BaseModel):
+    id: UUID
+    name: Optional[str] = None
+    email: str
+    phone: Optional[str] = None
+    birthdate: Optional[datetime] = None
+    description: Optional[str] = None
+    img_link: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class UserProfileUpdate:
+    def __init__(
+        self,
+        name: Optional[str] = Form(None),
+        email: Union[EmailStr, str, None] = Form(None),
+        phone: Optional[str] = Form(None),
+        birthdate: Union[datetime, str, None] = Form(None),
+        description: Optional[str] = Form(None),
+    ):
+        self.name = name
+        self.email = email
+        self.phone = phone
+        self.birthdate = birthdate
+        self.description = description
+
+        if birthdate:
+            try:
+                self.birthdate = datetime.strptime(birthdate, "%Y-%m-%d")
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid birthdate format. Use YYYY-MM-DD.")
+        else:
+            self.birthdate = None
+
+    def dict(self, exclude_unset=True):
+        return {
+            k: v for k, v in self.__dict__.items()
+            if v not in ("", None)
+        }

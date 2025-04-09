@@ -22,13 +22,19 @@ async def search_posts(
     filter_clauses = []
 
     if filters.keyword:
-        filter_clauses.append(
-            or_(
-                Post.title.ilike(f"%{filters.keyword}%"),
-                Post.description.ilike(f"%{filters.keyword}%"),
-                PostTag.tag_name.ilike(f"%{filters.keyword}%")
+        words = filters.keyword.strip().split(',')
+        keyword_conditions = []
+        
+        for word in words:
+            keyword_conditions.append(
+                or_(
+                    Post.title.ilike(f"%{word}%"),
+                    Post.description.ilike(f"%{word}%"),
+                    PostTag.tag_name.ilike(f"%{word}%")
+                )
             )
-        )
+
+        filter_clauses.append(or_(*keyword_conditions))
 
     if filters.tags:
         filter_clauses.append(PostTag.tag_name.ilike(f"%{filters.tags}%"))
@@ -43,7 +49,13 @@ async def search_posts(
     if filter_clauses:
         stmt = stmt.where(and_(*filter_clauses))
 
+    stmt = stmt.group_by(Post.id)
+
+    if filters.rating_to is not None:
+        stmt = stmt.having(func.avg(PostRating.rating) <= filters.rating_to)
+
     if filters.sort_by == "rating":
+        stmt = stmt.group_by(Post.id)
         sort_column = func.avg(PostRating.rating)
     else:
         sort_column = Post.created_at

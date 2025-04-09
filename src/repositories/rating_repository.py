@@ -26,6 +26,7 @@ async def add_rating(post_id: UUID, rating: int, db: AsyncSession, current_user:
     new_rating = PostRating(post_id=post_id, user_id=current_user.id, rating=rating)
     db.add(new_rating)
     await db.commit()
+    await db.refresh(new_rating)
     return new_rating
 
 async def get_rating_data(post_id: UUID, db: AsyncSession):

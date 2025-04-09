@@ -11,14 +11,14 @@ class UserRole(str, Enum):
 
 class UserOut(BaseModel):
     id: UUID
-    name: str
+    name: Optional[str] = None
     email: str
     type: UserRole
     img_link: str | None
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserSearchRequest(BaseModel):
     search: Optional[str] = None

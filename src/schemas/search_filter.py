@@ -10,6 +10,7 @@ class PostSearchRequest(BaseModel):
     to_date: Optional[datetime] = None
     sort_by: Literal["date", "rating"] = "date"
     order: Literal["asc", "desc"] = "desc"
+    rating_to: Optional[float] = None
 
 class TagResponse(BaseModel):
     tag_name: str
@@ -19,10 +20,10 @@ class PostResponse(BaseModel):
     title: str
     description: str
     image_url: str
-    user_name: str
+    user_name: Optional[str] = None
     created_at: datetime
     tags: List[TagResponse]
     average_rating: Dict
 
     class Config:
-        orm_mode = True
+        from_attributes = True
