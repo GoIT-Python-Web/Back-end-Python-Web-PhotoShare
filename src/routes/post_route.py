@@ -28,12 +28,21 @@ async def get_posts(
 @router.get("/{post_id}", response_model=PostResponse)
 async def get_post(
     post_id: UUID, 
-    db: AsyncSession = Depends(get_db), 
-    current_user: User = role_required("user", "admin")
+    db: AsyncSession = Depends(get_db)
 ):
-    service = PostService(PostRepository(db, current_user))
+    service = PostService(PostRepository(db))
     
     return await service.get_post_by_id(post_id)
+
+@router.get("/user/{user_id}", response_model=List[PostResponse])
+async def get_posts_by_user(
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = role_required("user", "admin"),
+    user_id: UUID = None
+):
+    service = PostService(PostRepository(db, current_user, user_id))
+    
+    return await service.get_all_user_posts()
 
 @router.put("/{post_id}", response_model=PostResponse)
 async def update_post(

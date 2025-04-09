@@ -52,7 +52,7 @@ class PostResponse(BaseModel):
     avg_rating: Optional[float] = None
     rating_count: Optional[int] = None
     user: Optional[UserShortResponse] = None
-    tags: Optional[List[TagsShortResponse]] = None
+    tags: List[TagsShortResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
