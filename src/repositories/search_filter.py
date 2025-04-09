@@ -1,3 +1,4 @@
+from datetime import timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
@@ -22,7 +23,7 @@ async def search_posts(
     filter_clauses = []
 
     if filters.keyword:
-        words = filters.keyword.strip().split(',')
+        words = [word.strip() for word in filters.keyword.split(',') if word.strip()]
         keyword_conditions = []
         
         for word in words:
@@ -40,7 +41,8 @@ async def search_posts(
         filter_clauses.append(PostTag.tag_name.ilike(f"%{filters.tags}%"))
 
     if filters.from_date and filters.to_date:
-        filter_clauses.append(Post.created_at.between(filters.from_date, filters.to_date))
+        to_date = filters.to_date + timedelta(days=1)
+        filter_clauses.append(Post.created_at.between(filters.from_date, to_date))
     elif filters.from_date:
         filter_clauses.append(cast(Post.created_at, Date) == filters.from_date.date())
     elif filters.to_date:
@@ -67,7 +69,7 @@ async def search_posts(
 
     result = await db.execute(stmt)
     posts = result.unique().scalars().all()
-
+    
     return [
         PostResponse(
             id=post.id,
@@ -77,7 +79,9 @@ async def search_posts(
             user_name=post.user.name,
             created_at=post.created_at,
             tags=[TagResponse(tag_name=tag.tag_name) for tag in post.tags],
-            average_rating=await get_rating_data(post.id, db)
+            avg_rating=average_rating,
+            rating_count=total_reviews
         )
         for post in posts
+        for average_rating, total_reviews in [await get_rating_data(post.id, db)]
     ]
