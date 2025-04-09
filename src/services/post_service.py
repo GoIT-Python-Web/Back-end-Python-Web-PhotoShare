@@ -1,13 +1,7 @@
 from uuid import UUID
 from typing import List, Optional
-
-from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
-
 from src.repositories.post_repository import PostRepository
 from src.schemas.post import PostResponse
-from src.entity.models import Post, PostRating, PostTag
-
 
 class PostService:
     def __init__(self, post_repo: PostRepository):
@@ -15,11 +9,10 @@ class PostService:
         self.db = post_repo.db  # предполагается, что у PostRepository есть self.db
     async def create_post(
         self,
-        title: str,
-        image_url: str,
-        description: Optional[str] = None
+        post_data: dict,
+        file
     ):
-        return await self.post_repo.create(title, image_url, description)
+        return await self.post_repo.create(post_data, file)
 
     async def get_post_by_id(self, post_id: UUID) -> PostResponse:
         return await self.post_repo.get_post(post_id)
@@ -36,3 +29,4 @@ class PostService:
 
     async def delete_post(self, post_id: UUID) -> bool:
         return await self.post_repo.delete_post(post_id)
+    

@@ -4,13 +4,13 @@ from pydantic.config import ConfigDict
 from typing import List, Optional
 from uuid import UUID
 
-class PostModel(BaseModel):
-    title: str
-    description: Optional[str] = None
-    image_url: str
-    location: Optional[str] = None
-    created_at: datetime = None
-    updated_at: datetime = None
+class TagModel(BaseModel):
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class TagsShortResponse(BaseModel):
+    name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -21,8 +21,22 @@ class UserShortResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class TagsShortResponse(BaseModel):
-    name: Optional[str] = None
+class PostModel(BaseModel):
+    title: str
+    description: Optional[str] = None
+    image_url: str
+    location: Optional[str] = None
+    created_at: datetime = None
+    updated_at: datetime = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class PostCreateModel(BaseModel):
+    title: str
+    description: Optional[str]
+    image_url: str
+    location: Optional[str]
+    tags: List[TagModel]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -39,6 +53,12 @@ class PostResponse(BaseModel):
     rating_count: Optional[int] = None
     user: Optional[UserShortResponse] = None
     tags: Optional[List[TagsShortResponse]] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class PostCreateResponse(BaseModel):
+    id: UUID
+    image_url: str
 
     model_config = ConfigDict(from_attributes=True)
 
