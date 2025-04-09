@@ -26,4 +26,4 @@ class PostResponse(BaseModel):
     average_rating: Dict
 
     class Config:
-        orm_mode = True
+        from_attributes = True

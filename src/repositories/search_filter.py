@@ -22,13 +22,19 @@ async def search_posts(
     filter_clauses = []
 
     if filters.keyword:
-        filter_clauses.append(
-            or_(
-                Post.title.ilike(f"%{filters.keyword}%"),
-                Post.description.ilike(f"%{filters.keyword}%"),
-                PostTag.tag_name.ilike(f"%{filters.keyword}%")
+        words = filters.keyword.strip().split(',')
+        keyword_conditions = []
+        
+        for word in words:
+            keyword_conditions.append(
+                or_(
+                    Post.title.ilike(f"%{word}%"),
+                    Post.description.ilike(f"%{word}%"),
+                    PostTag.tag_name.ilike(f"%{word}%")
+                )
             )
-        )
+
+        filter_clauses.append(or_(*keyword_conditions))
 
     if filters.tags:
         filter_clauses.append(PostTag.tag_name.ilike(f"%{filters.tags}%"))
