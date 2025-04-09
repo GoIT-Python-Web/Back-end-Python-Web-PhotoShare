@@ -23,7 +23,8 @@ class PostResponse(BaseModel):
     user_name: Optional[str] = None
     created_at: datetime
     tags: List[TagResponse]
-    average_rating: Dict
+    avg_rating: Optional[float] = None
+    rating_count: Optional[int] = None
 
     class Config:
         from_attributes = True

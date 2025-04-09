@@ -1,3 +1,4 @@
+from datetime import timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, asc, desc, cast, Date
 from src.entity.models import User
@@ -13,14 +14,14 @@ async def search_users(
     conditions = []
 
     if filters.search:
-        words = filters.search.strip().split()
+        words = [word.strip() for word in filters.search.split(',') if word.strip()]
         word_conditions = [
             or_(
                 User.name.ilike(f"%{word}%"),
                 User.email.ilike(f"%{word}%")
             ) for word in words
         ]
-        conditions.append(and_(*word_conditions))
+        conditions.append(or_(*word_conditions))
 
     if filters.role:
         conditions.append(User.type == filters.role)
@@ -29,7 +30,8 @@ async def search_users(
         conditions.append(User.is_active == True)
 
     if filters.reg_date_from and filters.reg_date_to:
-        conditions.append(User.created_at.between(filters.reg_date_from, filters.reg_date_to))
+        reg_date_to = filters.reg_date_to + timedelta(days=1)
+        conditions.append(User.created_at.between(filters.reg_date_from, reg_date_to))
     elif filters.reg_date_from:
         conditions.append(cast(User.created_at, Date) == filters.reg_date_from.date())
     elif filters.reg_date_to:

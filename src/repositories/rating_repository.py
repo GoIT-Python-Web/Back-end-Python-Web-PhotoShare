@@ -41,4 +41,4 @@ async def get_rating_data(post_id: UUID, db: AsyncSession):
     rating_data = result.first()
     average_rating = round(rating_data[0], 1) if rating_data[0] else 0
     total_reviews = rating_data[1]
-    return {"rating":f"{average_rating} / 5 ({total_reviews} оцінок)"}
+    return average_rating, total_reviews
