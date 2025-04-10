@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, asc, desc, cast, Date
 from src.entity.models import User
 from typing import List
+from uuid import UUID
 from src.schemas.admin_search import UserSearchRequest
 
 async def search_users(
@@ -52,3 +53,8 @@ async def search_users(
 
     result = await db.execute(stmt)
     return result.scalars().all()
+
+
+async def get_user_by_id(user_id: UUID, db: AsyncSession):
+    result = await db.execute(select(User).filter(User.id == user_id))
+    return result.scalars().first()
