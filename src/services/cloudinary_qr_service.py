@@ -17,21 +17,36 @@ class UploadFileService:
         )
 
     @staticmethod
-    async def upload_file(file: UploadFile) -> str:
+    async def upload_with_filters(
+        file: UploadFile,
+        width: int = None,
+        height: int = None,
+        crop: str = None,
+        effect: str = None
+    ) -> str:
         UploadFileService.configure_cloudinary()
 
-        # Завантаження файлу в Cloudinary
         try:
             result = cloudinary.uploader.upload(file.file)
             public_id = result.get("public_id")
 
-            # Генерація посилання на трансформоване зображення
+            transformation = {}
+            if width:
+                transformation["width"] = width
+            if height:
+                transformation["height"] = height
+            if crop:
+                transformation["crop"] = crop
+            if effect:
+                transformation["effect"] = effect
+
             src_url = cloudinary.CloudinaryImage(public_id).build_url(
-                width=250, height=250, crop="fill", version=result.get("version")
+                transformation=transformation,
+                version=result.get("version")
             )
             return src_url
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"File upload failed: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Upload with filters failed: {str(e)}")
 
 
 class QrService:
