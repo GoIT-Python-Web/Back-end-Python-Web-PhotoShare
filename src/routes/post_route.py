@@ -3,11 +3,12 @@ from fastapi import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.schemas.post import (
-    PostResponse, PostCreateModel, PostCreateResponse, PostUpdateRequest
+    PostResponse, PostCreateModel, PostCreateResponse, PostUpdateRequest, FilterOptions
 )
 from uuid import UUID
 from src.database.db import get_db
 from src.repositories.post_repository import PostRepository
+from src.services.cloudinary_qr_service import UploadFileService, QrService
 from src.services.post_service import PostService
 from typing import List
 from src.entity.models import User
@@ -112,3 +113,31 @@ async def delete_post(
         )
     
     return True
+
+
+@router.post("/upload-filtered-image/")
+async def upload_filtered_image(
+    file: UploadFile = File(...),
+    width: int = Form(...),
+    height: int = Form(...),
+    crop: str = Form(...),
+    effect: str = Form(...),
+):
+    image_url = await UploadFileService.upload_with_filters(
+        file=file,
+        width=width,
+        height=height,
+        crop=crop,
+        effect=effect
+    )
+    return {"image_url": image_url}
+
+
+@router.post("/generate-qr")
+async def generate_qr_code_from_url(url: str = Body(..., embed=True)):
+    try:
+        qr_code_image = QrService.generate_qr_code(url)
+        return {"qr_code": qr_code_image}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"QR generation failed: {str(e)}")
+
