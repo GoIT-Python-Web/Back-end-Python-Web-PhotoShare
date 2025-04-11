@@ -4,6 +4,7 @@ from uuid import uuid4
 from fastapi import HTTPException
 from src.repositories.post_repository import PostRepository
 from src.services.post_service import PostService
+from src.schemas.post import PostCreateModel, PostCreateResponse
 from src.entity.models import Post, PostRating, User
 from datetime import datetime
 from io import BytesIO
@@ -49,13 +50,6 @@ def test_user():
 
 @pytest.mark.asyncio
 async def test_create_post_success(fake_db, current_user):
-    from src.schemas.post import PostCreateModel, PostCreateResponse
-
-    mock_file = MagicMock()
-    mock_file.filename = "image.jpg"
-    mock_file.content_type = "image/jpeg"
-    mock_file.file = BytesIO(b"fake image data")
-
     fake_post_id = uuid4()
 
     post_data = PostCreateModel(
@@ -66,27 +60,34 @@ async def test_create_post_success(fake_db, current_user):
         tags=[{"name": "tag1"}]
     )
 
-    with patch("src.services.cloudinary_qr_service.UploadFileService.upload_file", new_callable=AsyncMock) as mock_upload:
-        mock_upload.return_value = "http://fake.image.url/test.jpg"
+    created_post = Post(
+        id=fake_post_id,
+        user_id=current_user.id,
+        title=post_data.title,
+        description=post_data.description,
+        image_url=post_data.image_url,
+        location=post_data.location,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        tags=[],
+        ratings=[],
+        user=current_user
+    )
 
-        repo = PostRepository(fake_db, current_user)
-        service = PostService(repo)
+    fake_db.execute = AsyncMock()
+    fake_db.flush = AsyncMock()
+    fake_db.commit = AsyncMock()
+    fake_db.refresh = AsyncMock()
 
-        fake_db.execute = AsyncMock()
-        fake_db.flush = AsyncMock()
-        fake_db.commit = AsyncMock()
-        fake_db.refresh = AsyncMock()
+    repo = PostRepository(fake_db, current_user)
+    service = PostService(repo)
+    service.post_repo.get_post = AsyncMock(return_value=created_post)
 
-        def fake_add(post):
-            post.id = fake_post_id
-        fake_db.add = MagicMock(side_effect=fake_add)
+    result = await service.create_post(post_data)
 
-        result = await service.create_post(post_data, mock_file)
-
-        assert isinstance(result, PostCreateResponse)
-        assert result.id == fake_post_id
-        mock_upload.assert_awaited_once_with(mock_file)
-
+    assert isinstance(result, PostCreateResponse)
+    assert result.id == fake_post_id
+    assert result.title == "Test Title"
 
 @pytest.mark.asyncio
 async def test_get_all_posts(fake_db, sample_post):
