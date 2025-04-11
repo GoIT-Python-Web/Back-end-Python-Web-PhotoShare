@@ -70,3 +70,9 @@ class PostUpdateResponse(BaseModel):
 
 class PostDeleteResponse(BaseModel):
     message: str
+
+class FilterOptions(BaseModel):
+    width: Optional[int] = None
+    height: Optional[int] = None
+    crop: Optional[str] = None
+    effect: Optional[str] = None
