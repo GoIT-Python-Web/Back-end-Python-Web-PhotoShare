@@ -34,6 +34,6 @@ async def update_profile(
 ):
     avatar_url = None
     if avatar and avatar.filename:
-        avatar_url = await UploadFileService.upload_file(avatar)
+        avatar_url = await UploadFileService.upload_with_filters(avatar)
 
     return await update_user_profile(current_user.id, profile_data, db, avatar_url)
