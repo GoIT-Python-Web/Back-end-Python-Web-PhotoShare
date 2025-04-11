@@ -3,7 +3,7 @@ from fastapi import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.schemas.post import (
-    PostResponse, PostCreateModel, PostCreateResponse, PostUpdateRequest, FilterOptions
+    PostResponse, PostCreateModel, PostCreateResponse, PostUpdateRequest
 )
 from uuid import UUID
 from src.database.db import get_db
