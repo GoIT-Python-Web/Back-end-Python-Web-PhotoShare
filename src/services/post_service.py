@@ -10,10 +10,9 @@ class PostService:
     
     async def create_post(
         self,
-        post_data: dict,
-        file
+        post_data: dict
     ):
-        return await self.post_repo.create(post_data, file)
+        return await self.post_repo.create(post_data)
 
     async def get_post_by_id(self, post_id: UUID) -> PostResponse:
         return await self.post_repo.get_post(post_id)
