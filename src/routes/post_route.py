@@ -56,7 +56,7 @@ async def update_post(
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
     
-    if post.user_id != current_user.id:
+    if current_user.type != 'admin' and post.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to update this post.",
@@ -99,7 +99,7 @@ async def delete_post(
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
-    if post.user_id != current_user.id:
+    if current_user.type != 'admin' and post.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to delete this post.",
