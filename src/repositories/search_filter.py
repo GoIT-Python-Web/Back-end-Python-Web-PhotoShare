@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func, asc, desc
 from src.entity.models import Post, PostTag, PostRating
-from src.schemas.search_filter import PostSearchRequest, PostResponse, TagResponse
+from src.schemas.search_filter import PostSearchRequest, PostResponse, TagResponse, UserSearchResponse
 from typing import List
 from sqlalchemy import select, asc, desc, func, or_, and_, cast, Date
 from src.repositories.rating_repository import get_rating_data
@@ -76,9 +76,10 @@ async def search_posts(
             title=post.title,
             description=post.description,
             image_url=post.image_url,
-            user_name=post.user.name,
+            location=post.location,
+            user=UserSearchResponse(id=post.user.id, name=post.user.name, img_link=post.user.img_link),
             created_at=post.created_at,
-            tags=[TagResponse(tag_name=tag.tag_name) for tag in post.tags],
+            tags=[TagResponse(name=tag.tag_name) for tag in post.tags],
             avg_rating=average_rating,
             rating_count=total_reviews
         )

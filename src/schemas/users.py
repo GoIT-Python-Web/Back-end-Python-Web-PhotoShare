@@ -19,6 +19,7 @@ class MyselfOut(BaseModel):
     birthdate: datetime | None
     description: str | None
     img_link: str | None
+    location: Optional[str] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime

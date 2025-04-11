@@ -12,17 +12,30 @@ class PostSearchRequest(BaseModel):
     order: Literal["asc", "desc"] = "desc"
     rating_to: Optional[float] = None
 
+
+class UserSearchResponse(BaseModel):
+    id: UUID
+    img_link: Optional[str]
+    name: Optional[str]
+
+    class Config:
+        from_attributes = True
+
 class TagResponse(BaseModel):
-    tag_name: str
+    name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 class PostResponse(BaseModel):
     id: UUID
     title: str
     description: str
     image_url: str
-    user_name: Optional[str] = None
+    location: Optional[str] = None
+    user: Optional[UserSearchResponse] = None
     created_at: datetime
-    tags: List[TagResponse]
+    tags: List[TagResponse] = []
     avg_rating: Optional[float] = None
     rating_count: Optional[int] = None
 
