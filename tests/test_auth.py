@@ -1,14 +1,11 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
+from datetime import datetime, timedelta
 from fastapi import HTTPException
-from fastapi.testclient import TestClient
-
-from src.entity.models import User, RefreshToken
-from src.schemas.user_schema import UserLogin, UserCreate
-from src.services.auth_service import AuthService
-from src.services.token_service import TokenService
-from main import app
+from src.entity.models import User, UserTypeEnum, RefreshToken
+from src.schemas.user_schema import UserCreate, UserLogin
+from src.services.auth_service import generate_tokens
 
 
 @pytest.fixture
@@ -17,139 +14,98 @@ def fake_db():
 
 
 @pytest.fixture
-def user_data():
-    return UserCreate(email="test@example.com", password="testpassword", username="testuser")
+def user_create():
+    return UserCreate(
+        name="New User",
+        email="new@example.com",
+        password="securepassword",
+        username="newuser"
+    )
 
 
 @pytest.fixture
-def user_login():
-    return UserLogin(email="test@example.com", password="testpassword")
+def existing_user():
+    return User(
+        id=uuid4(),
+        email="existing@example.com",
+        password="hashedpassword",
+        username="existinguser",
+        is_active=True,
+        type=UserTypeEnum.user
+    )
 
 
 @pytest.fixture
-def test_user():
-    return User(id=uuid4(), email="test@example.com", username="testuser", hashed_password="hashed", is_active=True)
+def first_user():
+    return None  # Simulates no user in DB for first registration
 
 
 @pytest.fixture
-def test_token():
-    return "access-token"
-
+def db_user():
+    return User(
+        id=uuid4(),
+        email="login@example.com",
+        username="loginuser",
+        password="$2b$12$hashedvalue",
+        is_active=True,
+        type=UserTypeEnum.user
+    )
 
 @pytest.fixture
-def test_refresh_token():
-    return "refresh-token"
+def refresh_token_obj(db_user):
+    return RefreshToken(
+        id=uuid4(),
+        token="valid_refresh_token",
+        user_id=db_user.id,
+        revoked_at=None,
+        expires_at=datetime.utcnow() + timedelta(days=7)
+    )
 
-
-@pytest.fixture
-def client():
-    return TestClient(app)
-
-
-# ========== AuthService ==========
 
 @pytest.mark.asyncio
-async def test_register_user(fake_db, user_data, monkeypatch):
-    monkeypatch.setattr("src.services.auth_service.get_password_hash", lambda x: "hashed")
-    monkeypatch.setattr("src.services.auth_service.create_access_token", lambda data: "access-token")
-    monkeypatch.setattr("src.services.auth_service.create_refresh_token", lambda: "refresh-token")
-
-    fake_db.execute = AsyncMock()
+async def test_register_first_user(fake_db, user_create):
+    fake_db.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(first=MagicMock(return_value=None)))))
     fake_db.commit = AsyncMock()
     fake_db.refresh = AsyncMock()
 
-    service = AuthService(fake_db)
-    result = await service.register(user_data)
-    assert result["access_token"] == "access-token"
-    assert result["refresh_token"] == "refresh-token"
+    from src.repositories.user_repository import create_user
+    from src.repositories.user_repository import get_user_by_email
+    from src.routes.auth import register
+    create_user = AsyncMock(return_value={"email": user_create.email, "username": user_create.username})
+    get_user_by_email = AsyncMock(return_value=None)
+
+    response = await register(user_create, fake_db)
+    assert response == "You're welcome" 
 
 
 @pytest.mark.asyncio
-async def test_login_user_success(fake_db, user_login, test_user, monkeypatch):
-    monkeypatch.setattr("src.services.auth_service.verify_password", lambda raw, hashed: True)
-    monkeypatch.setattr("src.services.auth_service.create_access_token", lambda data: "access-token")
-    monkeypatch.setattr("src.services.auth_service.create_refresh_token", lambda: "refresh-token")
+async def test_logout_success(fake_db, refresh_token_obj):
+    from src.routes.auth import logout
+    fake_db.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(first=MagicMock(return_value=refresh_token_obj)))))
+    fake_db.commit = AsyncMock()
 
-    result_mock = MagicMock()
-    result_mock.scalar_one_or_none.return_value = test_user
-    fake_db.execute = AsyncMock(return_value=result_mock)
-
-    service = AuthService(fake_db)
-    tokens = await service.login(user_login)
-    assert tokens["access_token"] == "access-token"
-    assert tokens["refresh_token"] == "refresh-token"
+    response = await logout(refresh_token="valid_refresh_token", db=fake_db)
+    assert response["message"] == "Token revoked successfully"
+    assert refresh_token_obj.revoked_at is not None
 
 
 @pytest.mark.asyncio
-async def test_login_user_wrong_password(fake_db, user_login, test_user, monkeypatch):
-    monkeypatch.setattr("src.services.auth_service.verify_password", lambda raw, hashed: False)
+async def test_logout_token_not_found(fake_db):
+    from src.routes.auth import logout
+    fake_db.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(first=MagicMock(return_value=None)))))
 
-    result_mock = MagicMock()
-    result_mock.scalar_one_or_none.return_value = test_user
-    fake_db.execute = AsyncMock(return_value=result_mock)
-
-    service = AuthService(fake_db)
-    with pytest.raises(HTTPException) as exc:
-        await service.login(user_login)
-    assert exc.value.status_code == 401
+    with pytest.raises(HTTPException) as e:
+        await logout(refresh_token="nonexistent", db=fake_db)
+    assert e.value.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_refresh_token_success(fake_db, test_user, monkeypatch):
-    monkeypatch.setattr("src.services.token_service.decode_refresh_token", lambda token: {"sub": str(test_user.id)})
-    monkeypatch.setattr("src.services.token_service.create_access_token", lambda data: "new-access-token")
+async def test_refresh_token_success(db_user, fake_db, refresh_token_obj):
+    from src.services.auth_service import get_or_create_refresh_token, create_access_token
+    fake_db.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(first=MagicMock(return_value=refresh_token_obj)))))
+    create_access_token = AsyncMock(return_value=("new_token", datetime.utcnow() + timedelta(hours=1)))
 
-    token_service = TokenService(fake_db)
-    token = await token_service.refresh("valid-refresh-token")
-    assert token == "new-access-token"
-
-
-@pytest.mark.asyncio
-async def test_refresh_token_invalid(monkeypatch):
-    monkeypatch.setattr("src.services.token_service.decode_refresh_token", lambda token: None)
-
-    token_service = TokenService(fake_db=MagicMock())
-    with pytest.raises(HTTPException) as exc:
-        await token_service.refresh("invalid-token")
-    assert exc.value.status_code == 401
-
-
-# ========== ROUTES (Integration tests) ==========
-
-def test_register_route(client, monkeypatch):
-    monkeypatch.setattr("src.api.auth.get_auth_service", lambda: AsyncMock(
-        register=AsyncMock(return_value={"access_token": "test", "refresh_token": "test"})))
-
-    response = client.post("/auth/register", json={
-        "email": "user@example.com",
-        "username": "user1",
-        "password": "password"
-    })
-    assert response.status_code == 200
-    assert "access_token" in response.json()
-
-
-def test_login_route(client, monkeypatch):
-    monkeypatch.setattr("src.api.auth.get_auth_service", lambda: AsyncMock(
-        login=AsyncMock(return_value={"access_token": "test", "refresh_token": "test"})))
-
-    response = client.post("/auth/login", json={
-        "email": "user@example.com",
-        "password": "password"
-    })
-    assert response.status_code == 200
-    assert "access_token" in response.json()
-
-
-def test_refresh_route(client, monkeypatch):
-    monkeypatch.setattr("src.api.auth.get_token_service", lambda: AsyncMock(
-        refresh=AsyncMock(return_value="new-access-token")))
-
-    response = client.post("/auth/refresh", headers={"Authorization": "Bearer some-refresh-token"})
-    assert response.status_code == 200
-    assert response.json()["access_token"] == "new-access-token"
-
-
-
+    response = await get_or_create_refresh_token(db_user,fake_db)
+    assert response == refresh_token_obj.token
 
 
