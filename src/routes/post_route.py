@@ -3,7 +3,7 @@ from fastapi import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.schemas.post import (
-    PostResponse, PostCreateModel, PostCreateResponse, PostUpdateRequest, FilterOptions
+    PostResponse, PostCreateModel, PostCreateResponse, PostUpdateRequest
 )
 from uuid import UUID
 from src.database.db import get_db
@@ -107,6 +107,7 @@ async def upload_filtered_image(
     height: int = Form(...),
     crop: str = Form(...),
     effect: str = Form(...),
+    current_user: User = role_required("user", "admin")
 ):
     image_url = await UploadFileService.upload_with_filters(
         file=file,
@@ -118,7 +119,10 @@ async def upload_filtered_image(
     return {"image_url": image_url}
 
 @router.post("/generate-qr")
-async def generate_qr_code_from_url(url: str = Body(..., embed=True)):
+async def generate_qr_code_from_url(
+    url: str = Body(..., embed=True),
+    current_user: User = role_required("user", "admin")
+):
     try:
         qr_code_image = QrService.generate_qr_code(url)
         return {"qr_code": qr_code_image}
