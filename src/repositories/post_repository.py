@@ -114,6 +114,7 @@ class PostRepository:
             selectinload(Post.tags).selectinload(PostTag.tag),
             selectinload(Post.ratings)
         ).where(Post.user_id == user_id)
+        .order_by(Post.created_at.desc())
         )
 
         result = await self.db.execute(stmt)
@@ -147,7 +148,7 @@ class PostRepository:
             joinedload(Post.user),
             selectinload(Post.tags).selectinload(PostTag.tag),
             selectinload(Post.ratings)
-        )
+        ).order_by(Post.created_at.desc())
         )
 
         result = await self.db.execute(stmt)
