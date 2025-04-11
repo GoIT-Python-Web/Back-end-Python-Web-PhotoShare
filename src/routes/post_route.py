@@ -122,6 +122,7 @@ async def upload_filtered_image(
     height: int = Form(...),
     crop: str = Form(...),
     effect: str = Form(...),
+    current_user: User = role_required("user", "admin")
 ):
     image_url = await UploadFileService.upload_with_filters(
         file=file,
@@ -134,10 +135,12 @@ async def upload_filtered_image(
 
 
 @router.post("/generate-qr")
-async def generate_qr_code_from_url(url: str = Body(..., embed=True)):
+async def generate_qr_code_from_url(
+    url: str = Body(..., embed=True),
+    current_user: User = role_required("user", "admin")
+):
     try:
         qr_code_image = QrService.generate_qr_code(url)
         return {"qr_code": qr_code_image}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"QR generation failed: {str(e)}")
-
