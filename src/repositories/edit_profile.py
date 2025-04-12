@@ -1,9 +1,11 @@
+from fastapi import HTTPException
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update, select
 from src.entity.models import User
 from src.schemas.users import UserProfileUpdate
-from fastapi import HTTPException
-from uuid import UUID
+from src.core.security import get_password_hash
+
 
 async def update_user_profile(user_id: UUID, data: UserProfileUpdate, db: AsyncSession, avatar_url: str = None):
     result = await db.execute(select(User).filter(User.id == user_id))
@@ -13,7 +15,9 @@ async def update_user_profile(user_id: UUID, data: UserProfileUpdate, db: AsyncS
 
     clean_data = {k: v for k, v in data.dict(exclude_unset=True).items() if v not in [None, ""]}
 
-    print("DATA:", clean_data)  # для дебагу — можна потім прибрати
+    if 'password' in clean_data:
+        raw_password = clean_data.pop('password')
+        clean_data['password'] = get_password_hash(raw_password)
 
     for field, value in clean_data.items():
         setattr(user, field, value)
