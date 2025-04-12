@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from uuid import UUID
 from enum import Enum
@@ -17,8 +17,7 @@ class UserOut(BaseModel):
     img_link: str | None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserSearchRequest(BaseModel):
     search: Optional[str] = None

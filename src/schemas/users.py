@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID
@@ -24,8 +24,7 @@ class MyselfOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserProfileResponse(BaseModel):
     id: UUID
@@ -36,8 +35,7 @@ class UserProfileResponse(BaseModel):
     description: Optional[str] = None
     img_link: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserProfileUpdate:
     def __init__(
@@ -45,12 +43,14 @@ class UserProfileUpdate:
         name: Optional[str] = Form(None),
         email: Union[EmailStr, str, None] = Form(None),
         phone: Optional[str] = Form(None),
+        password: Optional[str] = Form(None),
         birthdate: Union[datetime, str, None] = Form(None),
         description: Optional[str] = Form(None),
     ):
         self.name = name
         self.email = email
         self.phone = phone
+        self.password = password
         self.birthdate = birthdate
         self.description = description
 

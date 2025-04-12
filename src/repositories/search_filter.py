@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func, asc, desc
-from src.entity.models import Post, PostTag, PostRating
+from src.entity.models import Post, PostTag, PostRating, User
 from src.schemas.search_filter import PostSearchRequest, PostResponse, TagResponse, UserSearchResponse
 from typing import List
 from sqlalchemy import select, asc, desc, func, or_, and_, cast, Date
@@ -17,6 +17,7 @@ async def search_posts(
         select(Post)
         .outerjoin(PostTag)
         .outerjoin(PostRating)
+        .join(User, Post.user_id == User.id)
         .options(joinedload(Post.tags), joinedload(Post.ratings), joinedload(Post.user))
     )
 
@@ -48,13 +49,27 @@ async def search_posts(
     elif filters.to_date:
         filter_clauses.append(cast(Post.created_at, Date) == filters.to_date.date())
 
+    stmt = stmt.where(User.is_active == True)
+
     if filter_clauses:
         stmt = stmt.where(and_(*filter_clauses))
 
     stmt = stmt.group_by(Post.id)
 
-    if filters.rating_to is not None:
-        stmt = stmt.having(func.avg(PostRating.rating) <= filters.rating_to)
+    if filters.exact_star is not None:
+        rounded_star = int(filters.exact_star)
+    
+        if rounded_star == 5:
+            stmt = stmt.having(func.avg(PostRating.rating) == 5.0)
+        else:
+            lower_bound = float(rounded_star)
+            upper_bound = rounded_star + 0.9
+            stmt = stmt.having(
+                and_(
+                    func.avg(PostRating.rating) >= lower_bound,
+                    func.avg(PostRating.rating) <= upper_bound
+                )
+            )
 
     if filters.sort_by == "rating":
         stmt = stmt.group_by(Post.id)
