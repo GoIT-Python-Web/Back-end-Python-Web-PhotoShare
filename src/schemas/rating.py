@@ -1,4 +1,4 @@
-from pydantic import BaseModel, UUID4, Field
+from pydantic import BaseModel, UUID4, ConfigDict, Field
 from datetime import datetime
 
 
@@ -13,6 +13,4 @@ class RatingOut(BaseModel):
     post_id: UUID4
     rating: int = Field(ge=1, le=5)
 
-    model_config = {
-        "from_attributes": True 
-    }
+    model_config = ConfigDict(from_attributes=True)

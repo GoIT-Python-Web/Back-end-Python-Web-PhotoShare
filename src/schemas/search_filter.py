@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from typing import List, Dict, Optional, Literal
 from datetime import datetime
@@ -10,7 +10,7 @@ class PostSearchRequest(BaseModel):
     to_date: Optional[datetime] = None
     sort_by: Literal["date", "rating"] = "date"
     order: Literal["asc", "desc"] = "desc"
-    rating_to: Optional[float] = None
+    exact_star: Optional[float] = None
 
 
 class UserSearchResponse(BaseModel):
@@ -18,14 +18,12 @@ class UserSearchResponse(BaseModel):
     img_link: Optional[str]
     name: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TagResponse(BaseModel):
     name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PostResponse(BaseModel):
     id: UUID
@@ -39,5 +37,4 @@ class PostResponse(BaseModel):
     avg_rating: Optional[float] = None
     rating_count: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
