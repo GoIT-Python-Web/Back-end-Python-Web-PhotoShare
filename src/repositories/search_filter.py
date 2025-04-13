@@ -73,7 +73,7 @@ async def search_posts(
 
     if filters.sort_by == "rating":
         stmt = stmt.group_by(Post.id)
-        sort_column = func.avg(PostRating.rating)
+        sort_column = func.coalesce(func.avg(PostRating.rating), 0)
     else:
         sort_column = Post.created_at
 
