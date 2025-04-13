@@ -13,7 +13,12 @@ from src.entity.models import Post, PostRating, User
 
 @pytest.fixture
 def fake_db():
-    return MagicMock()
+    db = MagicMock()
+    db.get = AsyncMock()
+    db.commit = AsyncMock()
+    db.refresh = AsyncMock()
+    db.execute = AsyncMock()
+    return db
 
 
 @pytest.fixture
@@ -125,7 +130,6 @@ def test_user():
         id=uuid4(),
         email="user@example.com",
         username="testuser",
-        hashed_password="hashed",
         is_active=True,
         type=UserTypeEnum.user,
     )
