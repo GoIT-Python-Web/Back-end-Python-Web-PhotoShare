@@ -8,29 +8,6 @@ from src.services.admin_user_service import AdminUserService
 from src.services.admin_comment_service import AdminCommentService
 
 
-@pytest.fixture
-def fake_db():
-    return MagicMock()
-
-
-@pytest.fixture
-def admin_user():
-    return User(id=uuid4(), email="admin@example.com", type=UserTypeEnum.admin, is_active=True)
-
-
-@pytest.fixture
-def user_instance():
-    return User(id=uuid4(), email="user@example.com", type=UserTypeEnum.user, is_active=True, username="user123")
-
-
-@pytest.fixture
-def banned_user():
-    return User(id=uuid4(), email="banned@example.com", type=UserTypeEnum.user, is_active=False)
-
-
-@pytest.fixture
-def comment_instance():
-    return Comment(id=uuid4(), post_id=uuid4(), is_deleted=False)
 
 
 # ========== AdminUserService Tests ==========
@@ -153,5 +130,5 @@ async def test_admin_get_post_comments(fake_db, comment_instance):
 
 
 
-# How to run the tests?  —  pytest tests/test_admin_routes_by_pavlo.py
+# How to run the tests?  —  pytest tests/test_admin_routes.py
 # Coverage level?  —  pytest --cov=src --cov-report=term-missing
