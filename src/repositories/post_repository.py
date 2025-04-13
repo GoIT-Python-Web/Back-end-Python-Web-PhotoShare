@@ -21,17 +21,14 @@ class PostRepository:
 
     async def create(
             self, 
-            post_data: dict,
-            file
+            post_data: dict
         ) -> Post:
-
-        image_url = await UploadFileService.upload_file(file)
 
         post = Post(
             user_id=self.user.id, 
             title=post_data.title, 
             description=post_data.description,
-            image_url=image_url,
+            image_url=post_data.image_url,
             location=post_data.location,
             created_at = datetime.datetime.now(),
             updated_at = datetime.datetime.now()

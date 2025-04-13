@@ -3,7 +3,7 @@ from fastapi import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.schemas.post import (
-    PostResponse, PostCreateModel, PostCreateResponse, PostUpdateRequest, FilterOptions
+    PostResponse, PostCreateModel, PostCreateResponse, PostUpdateRequest
 )
 from uuid import UUID
 from src.database.db import get_db
@@ -13,8 +13,6 @@ from src.services.post_service import PostService
 from typing import List
 from src.entity.models import User
 from src.core.dependencies import role_required
-
-import json
 
 router = APIRouter(prefix='/posts', tags=['posts'])
 
@@ -69,24 +67,12 @@ async def update_post(
 
 @router.post("/", response_model=PostCreateResponse)
 async def create_post(
-    title: str = Form(...),
-    description: str = Form(None),
-    location: str = Form(None),
-    tags: str = Form(...),
-    file: UploadFile = File(...),
+    post_data: PostCreateModel = Body(...),
     db: AsyncSession = Depends((get_db)),
     current_user: User = role_required("user", "admin")): 
 
-    post_data = PostCreateModel(
-        title=title,
-        description=description,
-        image_url='',
-        location=location,
-        tags=json.loads(tags)
-    )
-
     service = PostService(PostRepository(db, current_user))
-    return await service.create_post(post_data, file)
+    return await service.create_post(post_data)
 
 @router.delete("/{post_id}", response_model=bool)
 async def delete_post(
@@ -114,7 +100,6 @@ async def delete_post(
     
     return True
 
-
 @router.post("/upload-filtered-image/")
 async def upload_filtered_image(
     file: UploadFile = File(...),
@@ -122,6 +107,7 @@ async def upload_filtered_image(
     height: int = Form(...),
     crop: str = Form(...),
     effect: str = Form(...),
+    current_user: User = role_required("user", "admin")
 ):
     image_url = await UploadFileService.upload_with_filters(
         file=file,
@@ -132,12 +118,13 @@ async def upload_filtered_image(
     )
     return {"image_url": image_url}
 
-
 @router.post("/generate-qr")
-async def generate_qr_code_from_url(url: str = Body(..., embed=True)):
+async def generate_qr_code_from_url(
+    url: str = Body(..., embed=True),
+    current_user: User = role_required("user", "admin")
+):
     try:
         qr_code_image = QrService.generate_qr_code(url)
         return {"qr_code": qr_code_image}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"QR generation failed: {str(e)}")
-
