@@ -1,5 +1,7 @@
 from sqlalchemy.future import select
 from src.entity.models import Comment
+from sqlalchemy.orm import selectinload
+
 
 class AdminCommentRepository:
     def __init__(self, db):
@@ -13,6 +15,8 @@ class AdminCommentRepository:
 
     async def admin_get_post_comments(self, post_id):
         result = await self.db.execute(
-            select(Comment).where(Comment.post_id == post_id, Comment.is_deleted == False)
+            select(Comment)
+            .where(Comment.post_id == post_id, Comment.is_deleted == False)
+            .options(selectinload(Comment.user))
         )
         return result.scalars().all()

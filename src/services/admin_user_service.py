@@ -20,12 +20,12 @@ class AdminUserService:
         if user.type == UserTypeEnum.admin:
             raise HTTPException(status_code=403, detail="Cannot ban another admin")
 
-        if not user.is_active:
-            raise HTTPException(status_code=400, detail="User is already banned")
-
-        user.is_active = False
+        user.is_active = not user.is_active
         await self.repo.admin_commit_and_refresh(user)
-        return {"message": f"User {user.email} has been banned successfully"}
+
+        action = "unbanned" if user.is_active else "banned"
+        return {"message": f"User {user.email} has been {action} successfully"}
+
 
     async def admin_toggle_user_role(self, user_id: UUID):
         user = await self.repo.admin_get_user_by_id(user_id)
