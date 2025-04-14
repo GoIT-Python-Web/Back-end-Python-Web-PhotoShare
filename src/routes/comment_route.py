@@ -1,21 +1,23 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.db import get_db
 from src.schemas.comment import CommentCreateDTO, CommentOut, CommentUpdateDTO 
 from src.services.comment_service import CommentService
 from src.repositories.comment_repository import CommentRepository
 from uuid import UUID
-from fastapi import HTTPException
 from src.entity.models import User
 from src.core.dependencies import role_required
+from src.core.limiter import limiter
 
 router = APIRouter(prefix="/posts", tags=["comments"])
 
 
 @router.post("/{post_id}/comments", response_model=CommentOut)
+@limiter.limit("3/minute")
 async def add_comment(
     post_id: UUID,
     data: CommentCreateDTO,
+    request: Request,
     current_user: User = role_required("user", "admin"),
     db: AsyncSession = Depends(get_db)   
 ):
@@ -24,21 +26,33 @@ async def add_comment(
 
 
 @router.get("/{post_id}/comments", response_model=list[CommentOut])
-async def get_comments(post_id: UUID, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def get_comments(
+    post_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
     service = CommentService(CommentRepository(db))
     return await service.get_comments_for_post(post_id)
 
 
 @router.get("/comments/{comment_id}", response_model=CommentOut)
-async def get_comment(comment_id: UUID, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def get_comment(
+    comment_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
     service = CommentService(CommentRepository(db))
     return await service.get_comment(comment_id)
 
 
 @router.put("/comments/{comment_id}", response_model=CommentOut)
+@limiter.limit("3/minute")
 async def update_comment(
     comment_id: UUID,
     data: CommentUpdateDTO,
+    request: Request,
     current_user: User = role_required("user", "admin"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -47,8 +61,10 @@ async def update_comment(
 
 
 @router.delete("/comments/{comment_id}")
+@limiter.limit("3/minute")
 async def delete_comment(
     comment_id: UUID,
+    request: Request,
     current_user: User = role_required("user", "admin"),
     db: AsyncSession = Depends(get_db),
 ):
