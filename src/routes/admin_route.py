@@ -21,7 +21,7 @@ async def admin_get_all_users(
 
 
 @router.put("/users/{user_id}/ban", response_model=dict)
-async def admin_ban_user(
+async def admin_ban_or_unban_user(
     user_id: UUID, db: AsyncSession = Depends(get_db), admin=role_required("user", "admin")
 ):
     return await AdminUserService(db).admin_ban_user(user_id, admin)
