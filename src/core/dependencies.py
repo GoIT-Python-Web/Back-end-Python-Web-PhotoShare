@@ -16,5 +16,5 @@ def role_required(*allowed_roles: str):
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You do not have permission to access this resource",
                 )
-            return current_user
+        return current_user
     return Depends(verify_role)
