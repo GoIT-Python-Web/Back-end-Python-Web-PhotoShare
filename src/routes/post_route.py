@@ -47,7 +47,7 @@ async def get_posts_by_user(
 async def update_post(
     post_id: UUID, update_data: PostUpdateRequest = Body(...),
     db: AsyncSession = Depends(get_db),
-    current_user: User = role_required("user", "admin"),
+    current_user: User = role_required("user"),
 ):
     service = PostService(PostRepository(db, current_user))
     post = await service.get_post_by_id(post_id)
@@ -55,7 +55,9 @@ async def update_post(
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
     
-    if current_user.type != 'admin' and post.user_id != current_user.id:
+    author_or_admin = await service.is_author_or_admin(post)
+
+    if not author_or_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to update this post.",
@@ -86,7 +88,9 @@ async def delete_post(
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
-    if current_user.type != 'admin' and post.user_id != current_user.id:
+    author_or_admin = await service.is_author_or_admin(post)
+
+    if not author_or_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to delete this post.",
