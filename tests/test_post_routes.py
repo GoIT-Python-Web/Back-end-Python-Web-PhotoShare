@@ -48,46 +48,40 @@ def test_user():
         type=UserTypeEnum.user,
     )
 
+@patch("src.repositories.post_repository.Post", autospec=True)
 @pytest.mark.asyncio
-async def test_create_post_success(fake_db, current_user):
+async def test_create_post_success(mock_post_class, fake_db, current_user):
     fake_post_id = uuid4()
+    mock_post_instance = MagicMock()
+    mock_post_instance.id = fake_post_id
+    mock_post_instance.title = "Test Post"
+    mock_post_instance.image_url = "img_url"
+    mock_post_instance.user_id = current_user.id
+
+    mock_post_class.return_value = mock_post_instance
 
     post_data = PostCreateModel(
         title="Test Post",
         description="A test post",
-        image_url="",
+        image_url="img_url",
         location="Test City",
         tags=[{"name": "tag1"}]
     )
 
-    created_post = Post(
-        id=fake_post_id,
-        user_id=current_user.id,
-        title=post_data.title,
-        description=post_data.description,
-        image_url=post_data.image_url,
-        location=post_data.location,
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-        tags=[],
-        ratings=[],
-        user=current_user
-    )
-
     fake_db.execute = AsyncMock()
-    fake_db.flush = AsyncMock()
     fake_db.commit = AsyncMock()
+    fake_db.flush = AsyncMock()
     fake_db.refresh = AsyncMock()
 
     repo = PostRepository(fake_db, current_user)
     service = PostService(repo)
-    service.post_repo.get_post = AsyncMock(return_value=created_post)
+    service.post_repo.get_post = AsyncMock(return_value=mock_post_instance)
 
     result = await service.create_post(post_data)
 
     assert isinstance(result, PostCreateResponse)
     assert result.id == fake_post_id
-    assert result.title == "Test Title"
+    assert result.image_url == "img_url"
 
 @pytest.mark.asyncio
 async def test_get_all_posts(fake_db, sample_post):
