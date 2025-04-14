@@ -6,7 +6,6 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import Delete, Update
 from src.entity.models import Post, PostTag, Tag
 from src.schemas.post import PostResponse, PostCreateResponse, TagsShortResponse
-from src.services.cloudinary_qr_service import QrService, UploadFileService
 from typing import Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -173,7 +172,10 @@ class PostRepository:
         return posts_response
     
     async def update_post(self, post_id: UUID, description: Optional[str]) -> Post:
-        stmt = Update(Post).where(Post.id == post_id).values(description=description)
+        stmt = Update(Post).where(Post.id == post_id).values(
+            description=description,
+            updated_at = datetime.datetime.now()
+        )
         await self.db.execute(stmt)
         await self.db.commit()
 
@@ -187,4 +189,7 @@ class PostRepository:
         await self.db.commit()
 
         return result.rowcount > 0
+    
+    async def is_author_or_admin(self, post: Post) -> bool:
+        return self.user.id == post.user_id or self.user.type == "admin"
   

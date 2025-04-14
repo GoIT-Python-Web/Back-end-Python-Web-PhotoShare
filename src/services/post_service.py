@@ -2,6 +2,7 @@ from uuid import UUID
 from typing import List, Optional
 from src.repositories.post_repository import PostRepository
 from src.schemas.post import PostResponse
+from src.entity.models import Post
 
 class PostService:
     def __init__(self, post_repo: PostRepository):
@@ -32,4 +33,7 @@ class PostService:
 
     async def delete_post(self, post_id: UUID) -> bool:
         return await self.post_repo.delete_post(post_id)
+    
+    async def is_author_or_admin(self, post: Post):
+        return await self.post_repo.is_author_or_admin(post)
     
