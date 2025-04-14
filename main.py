@@ -2,8 +2,13 @@ from fastapi import FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from src.routes import admin_route, comment_route, rating_route, post_route, auth, search_filter, admin_search, user
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from src.core.limiter import limiter 
 
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(429, _rate_limit_exceeded_handler)
 
 app.include_router(search_filter.router)
 app.include_router(admin_search.router)
