@@ -140,7 +140,9 @@ class PostRepository:
     async def get_posts(self) -> list[Post]:
         stmt = (select(
             Post
-        ).options(
+        ).join(Post.user)
+        .where(Post.user.has(is_active=True))
+        .options(
             joinedload(Post.user),
             selectinload(Post.tags).selectinload(PostTag.tag),
             selectinload(Post.ratings)
