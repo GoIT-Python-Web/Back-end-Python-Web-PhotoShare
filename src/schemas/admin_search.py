@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 from datetime import datetime
 from uuid import UUID
 from enum import Enum
@@ -12,10 +12,16 @@ class UserRole(str, Enum):
 class UserOut(BaseModel):
     id: UUID
     name: Optional[str] = None
-    email: str
+    username: str
+    email: EmailStr
     type: UserRole
     img_link: str | None
+    phone: Optional[str]
+    birthdate: Optional[datetime]
+    description: Optional[str]
+    is_active: bool
     created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -23,7 +23,7 @@ from src.entity.models import User, UserTypeEnum
 from datetime import datetime
 from src.entity.models import RefreshToken
 from src.services.auth_service import generate_tokens
-
+from src.core.limiter import limiter
 
 
 
@@ -37,8 +37,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         user = await get_user_by_id(db, user_id)    
         return user
 
+
 @router.post("/register")
+@limiter.limit("3/minute")
 async def register(
+    request: Request,
     user: UserCreate = Body(...),      
     db: AsyncSession = Depends(get_db)):
     existing_user = await get_user_by_email(db, user.email)
@@ -53,11 +56,17 @@ async def register(
         user_type = UserTypeEnum.user
     return await create_user(db, user, user_type) 
 
+
 @router.post("/login", response_model=TokenModel)
-async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(request: Request, user_data: UserLogin, db: AsyncSession = Depends(get_db)):
     from src.repositories.user_repository import get_user_by_username
 
     db_user = await get_user_by_username(db, user_data.username)
+    
+    if not db_user.is_active:
+        raise HTTPException(status_code=403, detail="User is blocked")
+    
     if not db_user or not verify_password(user_data.password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
@@ -65,7 +74,8 @@ async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
     return tokens
 
 @router.post("/logout")
-async def logout(refresh_token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def logout(request: Request, refresh_token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RefreshToken).where(RefreshToken.token == refresh_token))
     token_obj = result.scalars().first()
 
@@ -83,7 +93,8 @@ async def logout(refresh_token: str = Depends(oauth2_scheme), db: AsyncSession =
 
 
 @router.post("/refresh", response_model=TokenModel)
-async def refresh_token(refresh_token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+@limiter.limit("3/minute")
+async def refresh_token(request: Request, refresh_token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RefreshToken).where(RefreshToken.token == refresh_token))
     token_obj = result.scalars().first()
 
