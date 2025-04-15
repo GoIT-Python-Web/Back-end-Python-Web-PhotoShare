@@ -13,12 +13,10 @@ from jose import jwt, JWTError
 from src.conf.config import settings
 from src.repositories.user_repository import get_user_by_email, get_user_by_id, create_user, get_user_by_username
 from uuid import UUID
-from src.database.db import get_db
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import APIRouter, Body, Depends, HTTPException, status, Security, Request, BackgroundTasks, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.database.db import get_db
 from src.entity.models import User, UserTypeEnum
 from datetime import datetime
 from src.entity.models import RefreshToken
