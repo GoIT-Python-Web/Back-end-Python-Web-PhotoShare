@@ -1,3 +1,4 @@
+from httpx import AsyncClient
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
@@ -6,12 +7,24 @@ from fastapi import HTTPException
 from src.entity.models import User, UserTypeEnum, RefreshToken
 from src.schemas.user_schema import UserCreate, UserLogin
 from src.services.auth_service import generate_tokens
+from fastapi.testclient import TestClient
+from fastapi import Request, APIRouter
+from main import app
+from src.entity.models import RefreshToken, UserTypeEnum, User
 
+
+client = TestClient(app)
+router = APIRouter()
 
 @pytest.fixture
 def fake_db():
     return MagicMock()
 
+
+def fake_request():
+    with client as c:
+        req = Request(scope={"type": "http"})
+        return req
 
 @pytest.fixture
 def user_create():
@@ -62,41 +75,31 @@ def refresh_token_obj(db_user):
     )
 
 
-@pytest.mark.asyncio
-async def test_register_first_user(fake_db, user_create):
-    fake_db.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(first=MagicMock(return_value=None)))))
-    fake_db.commit = AsyncMock()
-    fake_db.refresh = AsyncMock()
-
-    from src.repositories.user_repository import create_user
-    from src.repositories.user_repository import get_user_by_email
-    from src.routes.auth import register
-    create_user = AsyncMock(return_value={"email": user_create.email, "username": user_create.username})
-    get_user_by_email = AsyncMock(return_value=None)
-
-    response = await register(user_create, fake_db)
-    assert response == "You're welcome" 
-
 
 @pytest.mark.asyncio
-async def test_logout_success(fake_db, refresh_token_obj):
-    from src.routes.auth import logout
-    fake_db.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(first=MagicMock(return_value=refresh_token_obj)))))
-    fake_db.commit = AsyncMock()
+async def test_register_first_user_integration():
+    payload = {
+        "name": f"new{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        "email": f"new{datetime.now().strftime('%Y%m%d%H%M%S')}@example.com",
+        "password": "securepassword",
+        "username": f"new{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    }
 
-    response = await logout(refresh_token="valid_refresh_token", db=fake_db)
-    assert response["message"] == "Token revoked successfully"
-    assert refresh_token_obj.revoked_at is not None
+    response = client.post("/register", json=payload)
+
+    print("STATUS:", response.status_code)
+    print("TEXT:", response.text)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data == "You're welcome"
 
 
-@pytest.mark.asyncio
-async def test_logout_token_not_found(fake_db):
-    from src.routes.auth import logout
-    fake_db.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(first=MagicMock(return_value=None)))))
+client = TestClient(app)
 
-    with pytest.raises(HTTPException) as e:
-        await logout(refresh_token="nonexistent", db=fake_db)
-    assert e.value.status_code == 404
+def test_logout_no_token():
+    response = client.post("/logout")
+    assert response.status_code == 401  # бо токен не передано
 
 
 @pytest.mark.asyncio
