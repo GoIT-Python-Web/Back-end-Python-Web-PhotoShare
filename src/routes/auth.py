@@ -63,6 +63,10 @@ async def login(request: Request, user_data: UserLogin, db: AsyncSession = Depen
     from src.repositories.user_repository import get_user_by_username
 
     db_user = await get_user_by_username(db, user_data.username)
+    
+    if not db_user.is_active:
+        raise HTTPException(status_code=403, detail="User is blocked")
+    
     if not db_user or not verify_password(user_data.password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
