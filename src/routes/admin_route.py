@@ -20,7 +20,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 async def admin_get_all_users(
     request: Request,
     db: AsyncSession = Depends(get_db), 
-    admin=role_required("user", "admin")
+    admin=role_required("admin")
 ):
     return await AdminUserService(db).admin_get_all_users()
 
@@ -31,7 +31,7 @@ async def admin_ban_or_unban_user(
     user_id: UUID, 
     request: Request,
     db: AsyncSession = Depends(get_db), 
-    admin=role_required("user", "admin")
+    admin=role_required("admin")
 ):
     return await AdminUserService(db).admin_ban_user(user_id, admin)
 
@@ -42,7 +42,7 @@ async def admin_toggle_user_role(
     user_id: UUID, 
     request: Request,
     db: AsyncSession = Depends(get_db), 
-    admin=role_required("user", "admin")
+    admin=role_required("admin")
 ):
     return await AdminUserService(db).admin_toggle_user_role(user_id)
 
@@ -53,7 +53,7 @@ async def admin_delete_comment(
     comment_id: UUID, 
     request: Request,
     db: AsyncSession = Depends(get_db), 
-    admin=role_required("user", "admin")
+    admin=role_required("admin")
 ):
     return await AdminCommentService(db).admin_soft_delete_comment(comment_id)
 
@@ -64,6 +64,6 @@ async def admin_get_post_comments(
     post_id: UUID, 
     request: Request,
     db: AsyncSession = Depends(get_db), 
-    admin=role_required("user", "admin")
+    admin=role_required("admin")
 ):
     return await AdminCommentService(db).admin_get_post_comments(post_id)
